@@ -18,9 +18,13 @@ import java.util.List;
 
 public class DiscordBot extends ListenerAdapter
 {
+    static final String prefix = "!";
+    static final long welcomechid = 910130241664602144L;
+    static final long leavechid = welcomechid;
+    static final long generalchid = 910094414175694879L;
+
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
-        String prefix = "!";
 
         Message message = event.getMessage();
         String content = message.getContentRaw();
@@ -183,7 +187,7 @@ public class DiscordBot extends ListenerAdapter
     @Override
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
         //Guild guild = event.getGuild();
-        TextChannel welcomechannel = event.getGuild().getTextChannelById(910130241664602144L);
+        TextChannel welcomechannel = event.getGuild().getTextChannelById(welcomechid);
 
         // naravno sve ovo treba poboljsati ali baza je tu
         // dodati lepu porukicu, updatovanje channela sa member listama, potencijalno davanje nekih rolova
@@ -195,7 +199,7 @@ public class DiscordBot extends ListenerAdapter
     @Override
     public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
         //Guild guild = event.getGuild();
-        TextChannel leavechannel = event.getGuild().getTextChannelById(910130241664602144L);
+        TextChannel leavechannel = event.getGuild().getTextChannelById(leavechid);
         // bruhh sta je ovo
         //List<TextChannel> leavechlist = event.getGuild().getTextChannelsByName("welcome",true);
 
@@ -209,7 +213,7 @@ public class DiscordBot extends ListenerAdapter
     public void onChannelDelete(@NotNull ChannelDeleteEvent event) {
         String channelName = event.getChannel().getName();
 
-        TextChannel general = event.getGuild().getTextChannelById(1211361791406506136L);
+        TextChannel general = event.getGuild().getTextChannelById(generalchid);
 
         if(general != null) {
             general.sendMessage("The channel: \"" + channelName + "\" voz dilited").queue();
