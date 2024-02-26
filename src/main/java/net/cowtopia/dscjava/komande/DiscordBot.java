@@ -2,7 +2,6 @@ package net.cowtopia.dscjava.komande;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -26,6 +25,12 @@ public class DiscordBot extends ListenerAdapter
         Message message = event.getMessage();
         String content = message.getContentRaw();
         MessageChannel channel = event.getChannel();
+
+        // ja ne kontam razliku izmedju ovih channela pa sam samo hakovao ovo jer ne znam sta bih drugo
+        TextChannel guildChannelEvil = event.getGuild().getTextChannelById(channel.getId());
+
+
+        String mentionUser = message.getAuthor().getAsMention();
 
 
         if(event.getAuthor().isBot()) return;
@@ -65,10 +70,9 @@ public class DiscordBot extends ListenerAdapter
                 channel.sendMessage("Nema tebi pomoci decko").queue();
             }
             else if (cmd.equals("invite")) {
-                message.reply("[Discord Link](https://discord.gg/zrEUQENmRr)").queue();
+                message.reply("https://discord.gg/zrEUQENmRr").queue();
             }
             else if (cmd.equals("ping")) {
-                //channel.sendMessage(message.getAuthor().getAsMention() + " my ping is `implement actual ping cmd`").queue();
 
                 // ukrao iz chat djipitija
                 long startTime = System.currentTimeMillis(); // Record the current time
@@ -113,12 +117,36 @@ public class DiscordBot extends ListenerAdapter
 
                 // Send the embed message to the channel
                 channel.sendMessageEmbeds(embed).queue();
-                //event.getChannel().sendMessage("message").setEmbeds(embed.build()).queue();
+                //channel.sendMessage("message").setEmbeds(embedBuilder.build()).queue();
                 embedBuilder.clear();
 
             }
             else if (cmd.equals("slowmode")) {
-                channel.sendMessage("implement later plz").queue();
+                if(!message.getMember().hasPermission(Permission.MANAGE_CHANNEL)) {
+                    channel.sendMessage("You don't have right permissions to execute this command. You need `MANAGE_CHANNEL` permission").queue();
+                    return;
+                }
+                try {
+                    int slowmodeKojiUserZeli = Integer.valueOf(niz_reci[1]);
+                    guildChannelEvil.getManager().setSlowmode(slowmodeKojiUserZeli).queue();
+                    channel.sendMessage(mentionUser + " set the slowmode to " + niz_reci[1] + " seconds").queue();
+
+                } catch (NumberFormatException e) {
+                    // ako opet zaboravim da napisem .queue() mislim da ce se lose stvari desiti
+                    channel.sendMessage("Input you provided is not a number!").queue();
+                    return;
+                }
+            }
+            else if (cmd.equals("slowmode?")) {
+
+                // iskreno ne volim ovo Integer.toString() u javi ali sta ces
+                // i == je broken pa moras da koristis .equals()
+                String getSlowChannel = Integer.toString(guildChannelEvil.getSlowmode());
+
+                channel.sendMessage("The current slowmode in this channel is `" + getSlowChannel + "` seconds.").queue();
+                // e i da ako citas ovo volim te
+                // volim te i ako ne citas ali razumes poentu
+                // <3
             }
             else if (cmd.equals("members")) {
                 // problem: broji i botove, mogu da resim problem jednom FOR petljom ali bas mi se ne svidja to resenje
@@ -168,9 +196,11 @@ public class DiscordBot extends ListenerAdapter
     public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
         //Guild guild = event.getGuild();
         TextChannel leavechannel = event.getGuild().getTextChannelById(910130241664602144L);
+        // bruhh sta je ovo
+        //List<TextChannel> leavechlist = event.getGuild().getTextChannelsByName("welcome",true);
+
 
         // Isto kao i za welcome
-
         leavechannel.sendMessage(event.getUser().getAsMention() + " has left the server.").queue();
     }
 
