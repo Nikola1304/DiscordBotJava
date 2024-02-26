@@ -2,6 +2,7 @@ package net.cowtopia.dscjava.komande;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -22,6 +23,7 @@ public class DiscordBot extends ListenerAdapter
     static final long welcomechid = 910130241664602144L;
     static final long leavechid = welcomechid;
     static final long generalchid = 910094414175694879L;
+    static final long membersvcid = 1211789463475327067L;
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
@@ -94,8 +96,8 @@ public class DiscordBot extends ListenerAdapter
                     return;
                 }
                 channel.sendMessage("Nije zavrseno, ali makar ima permission sistem :)").queue();
-                //List<Member> mentionedMembers = event.getMessage().getMentionedMembers();
-                //if(!mentionedMembers.isEmpty)
+
+                
                 // zavrsi ovaj code
                 // stavio sam example iz chatdjipitija u StaDodati.md
             }
@@ -154,7 +156,7 @@ public class DiscordBot extends ListenerAdapter
             }
             else if (cmd.equals("members")) {
                 // problem: broji i botove, mogu da resim problem jednom FOR petljom ali bas mi se ne svidja to resenje
-                channel.sendMessage("There are " + Integer.toString(message.getGuild().getMemberCount()) + " members in this server").queue();
+                channel.sendMessage("There are " + Integer.toString(event.getGuild().getMemberCount()) + " members in this server").queue();
 
                 /*
                 event.getGuild().loadMembers().onSuccess(members -> {
@@ -177,6 +179,10 @@ public class DiscordBot extends ListenerAdapter
                     //channel.sendMessage(niz_reci[1]).queue();
                 } else System.out.println(message.getAuthor().getName() + " pokusava da koristi ovu komandu");
             }
+            else if (cmd.equals("license")) {
+                // nemam pojma da li je ovo vazno da uradim ali eto nek bude tu
+                channel.sendMessage("https://github.com/Nikola1304/DiscordBotJava/blob/main/LICENSE").queue();
+            }
         }
 
         // samo provera kada je bilo koja poruka poslata na server, ukloniti u finalnoj verziji da bi se smanjilo trosenje resursa
@@ -185,7 +191,8 @@ public class DiscordBot extends ListenerAdapter
     }
 
     @Override
-    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
+    public void onGuildMemberJoin(GuildMemberJoinEvent event)
+    {
         //Guild guild = event.getGuild();
         TextChannel welcomechannel = event.getGuild().getTextChannelById(welcomechid);
 
@@ -194,6 +201,13 @@ public class DiscordBot extends ListenerAdapter
 
         //guild.getDefaultChannel().sendMessage("Welcome " + event.getUser().getAsMention() + " to the server!").queue();
         welcomechannel.sendMessage("Welcome " + event.getUser().getAsMention() + " to the server!").queue();
+
+
+        // ovo nije najefikasnije na velikim serverima ali ako ikada postanem toliko veliki resavanje ovog problema bice jedan od manjih problema
+        // takodje discord API ogranicava promene na channelima na dve promene u 10 minuta
+
+        //event.getGuild().getVoiceChannelById(1211789463475327067L).getManager().setName("Total Users: " + event.getGuild().getMembers().size()).queue();
+        event.getGuild().getVoiceChannelById(membersvcid).getManager().setName("Members: " + event.getGuild().getMemberCount()).queue();
     }
 
     @Override
@@ -206,6 +220,7 @@ public class DiscordBot extends ListenerAdapter
 
         // Isto kao i za welcome
         leavechannel.sendMessage(event.getUser().getAsMention() + " has left the server.").queue();
+        event.getGuild().getVoiceChannelById(membersvcid).getManager().setName("Members: " + event.getGuild().getMemberCount()).queue();
     }
 
     // potencijalno maknuti deo koda ispod ovog komentara
