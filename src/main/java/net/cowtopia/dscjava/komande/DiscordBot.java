@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class DiscordBot extends ListenerAdapter
 {
@@ -36,10 +38,11 @@ public class DiscordBot extends ListenerAdapter
         TextChannel guildChannelEvil = event.getGuild().getTextChannelById(channel.getId());
 
 
-        String mentionUser = message.getAuthor().getAsMention();
+        User author = message.getAuthor();
+        String mentionUser = author.getAsMention();
 
 
-        if(event.getAuthor().isBot()) return;
+        if(author.isBot()) return;
 
         // problem: attachment moze da bude nesto drugo osim slike (zip, pdf, bla bla bla)
         // mozda problem: mozes da napises tekst kad posaljes sliku
@@ -95,11 +98,32 @@ public class DiscordBot extends ListenerAdapter
                     channel.sendMessage("You don't have right permissions to execute this command. You need `BAN_MEMBERS` permission").queue();
                     return;
                 }
-                channel.sendMessage("Nije zavrseno, ali makar ima permission sistem :)").queue();
 
-                
-                // zavrsi ovaj code
-                // stavio sam example iz chatdjipitija u StaDodati.md
+                // lista svih mentioned membera, sa koje cemo, ako nije prazna, skinuti prvog i njega banovati
+                List<Member> banTargetovi = event.getMessage().getMentions().getMembers();
+
+                if(!banTargetovi.isEmpty()) {
+                    //User banUser = banTargetovi.get(0).getUser();
+                    //banUser.openPrivateChannel().flatMap(chenl -> chenl.sendMessage("DMovan si")).queue();
+
+                    event.getGuild().ban(banTargetovi.get(0),0, TimeUnit.MINUTES).reason("No sex").queue();
+                            //.queueAfter(500, TimeUnit.MILLISECONDS); // timeunit odredjuje koliko ce da ide nazad i obrise poruke
+                    channel.sendMessage(banTargetovi.get(0).getAsMention() + " has been banned! Neka mu je laka crna zemljica").queue();
+                }
+                else {
+                    channel.sendMessage("Specify who you want banned").queue();
+                }
+            }
+            else if(cmd.equals("unban")) {
+                if(!message.getMember().hasPermission(Permission.BAN_MEMBERS)) {
+                    channel.sendMessage("You don't have right permissions to execute this command. You need `BAN_MEMBERS` permission").queue();
+                    return;
+                }
+                channel.sendMessage("Mrzi me da implementiram sada");
+            }
+            else if (cmd.equals("banlist")) {
+                //channel.sendMessage((CharSequence) event.getGuild().retrieveBanList()).queue();
+                channel.sendMessage("cringe sto code iznad ne radi").queue();
             }
             else if (cmd.equals("embed")) {
                 EmbedBuilder embedBuilder = new EmbedBuilder();
@@ -171,13 +195,13 @@ public class DiscordBot extends ListenerAdapter
             }
             else if (cmd.equals("say")) {
                 // moj ID, jer drugi nisu dostojni ove komande
-                if(message.getAuthor().getId().equals("716962243400564786")) {
+                if(author.getId().equals("716962243400564786")) {
                     message.delete().queue();
                     channel.sendMessage(content.substring(5)).queue();
 
                     // problem: prikazuje samo jednu rec iz cele poruke, jako me mrzi da popravljam, ovo iznad tehnicki radi iako nije najlepse
                     //channel.sendMessage(niz_reci[1]).queue();
-                } else System.out.println(message.getAuthor().getName() + " pokusava da koristi ovu komandu");
+                } else System.out.println(author.getName() + " pokusava da koristi ovu komandu");
             }
             else if (cmd.equals("license")) {
                 // nemam pojma da li je ovo vazno da uradim ali eto nek bude tu
@@ -207,7 +231,8 @@ public class DiscordBot extends ListenerAdapter
         // takodje discord API ogranicava promene na channelima na dve promene u 10 minuta
 
         //event.getGuild().getVoiceChannelById(1211789463475327067L).getManager().setName("Total Users: " + event.getGuild().getMembers().size()).queue();
-        event.getGuild().getVoiceChannelById(membersvcid).getManager().setName("Members: " + event.getGuild().getMemberCount()).queue();
+        // ubijam API ovime, ostavicu ga disabled za sada (27.02.2024.)
+        //event.getGuild().getVoiceChannelById(membersvcid).getManager().setName("Members: " + event.getGuild().getMemberCount()).queue();
     }
 
     @Override
@@ -220,7 +245,7 @@ public class DiscordBot extends ListenerAdapter
 
         // Isto kao i za welcome
         leavechannel.sendMessage(event.getUser().getAsMention() + " has left the server.").queue();
-        event.getGuild().getVoiceChannelById(membersvcid).getManager().setName("Members: " + event.getGuild().getMemberCount()).queue();
+        //event.getGuild().getVoiceChannelById(membersvcid).getManager().setName("Members: " + event.getGuild().getMemberCount()).queue();
     }
 
     // potencijalno maknuti deo koda ispod ovog komentara
