@@ -21,14 +21,16 @@ import java.util.concurrent.TimeUnit;
 
 public class DiscordBot extends ListenerAdapter
 {
-    static final String prefix = "!";
+    public static final String prefix = "!";
     static final long welcomechid = 910130241664602144L;
     static final long leavechid = welcomechid;
     static final long generalchid = 910094414175694879L;
     static final long membersvcid = 1211789463475327067L;
 
+
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
+
 
         Message message = event.getMessage();
         String content = message.getContentRaw();
@@ -60,7 +62,7 @@ public class DiscordBot extends ListenerAdapter
 
         if(content.contains(event.getJDA().getSelfUser().getAsMention())) {
             // zadatak: promeni ovo u nesto korisno
-            channel.sendMessage("radi").queue();
+            channel.sendMessage("Tagovanje bota funkcionise jejjjj").queue();
         }
 
         // KOMANDE SA PREFIXOM
@@ -102,16 +104,36 @@ public class DiscordBot extends ListenerAdapter
                 // lista svih mentioned membera, sa koje cemo, ako nije prazna, skinuti prvog i njega banovati
                 List<Member> banTargetovi = event.getMessage().getMentions().getMembers();
 
+                // prebacio sam ovo u funkciju jer ce mi trebati za kick (jezivo znam)
+                String reasonBan = bankickjezivafunkcija(niz_reci);
+
                 if(!banTargetovi.isEmpty()) {
                     //User banUser = banTargetovi.get(0).getUser();
                     //banUser.openPrivateChannel().flatMap(chenl -> chenl.sendMessage("DMovan si")).queue();
 
-                    event.getGuild().ban(banTargetovi.get(0),0, TimeUnit.MINUTES).reason("No sex").queue();
+                    event.getGuild().ban(banTargetovi.get(0),0, TimeUnit.MINUTES).reason(reasonBan).queue();
                             //.queueAfter(500, TimeUnit.MILLISECONDS); // timeunit odredjuje koliko ce da ide nazad i obrise poruke
-                    channel.sendMessage(banTargetovi.get(0).getAsMention() + " has been banned! Neka mu je laka crna zemljica").queue();
+                    channel.sendMessage(banTargetovi.get(0).getAsMention() + " has been banned!").queue();
                 }
                 else {
                     channel.sendMessage("Specify who you want banned").queue();
+                }
+            }
+            else if (cmd.equals("kick")) {
+                if(!message.getMember().hasPermission(Permission.KICK_MEMBERS)) {
+                    channel.sendMessage("You don't have right permissions to execute this command. You need `KICK_MEMBERS` permission").queue();
+                    return;
+                }
+
+                List<Member> kickTargets = event.getMessage().getMentions().getMembers();
+                String reasonKick = bankickjezivafunkcija(niz_reci);
+
+                if(!kickTargets.isEmpty()) {
+                    event.getGuild().kick(kickTargets.get(0)).reason(reasonKick).queue();
+                    channel.sendMessage(kickTargets.get(0).getAsMention() + " has been kicked!").queue();
+                }
+                else {
+                    channel.sendMessage("Specify who you want kicked").queue();
                 }
             }
             else if(cmd.equals("unban")) {
@@ -119,11 +141,48 @@ public class DiscordBot extends ListenerAdapter
                     channel.sendMessage("You don't have right permissions to execute this command. You need `BAN_MEMBERS` permission").queue();
                     return;
                 }
-                channel.sendMessage("Mrzi me da implementiram sada");
-            }
-            else if (cmd.equals("banlist")) {
+                channel.sendMessage("Mrzi me da implementiram sada").queue();
                 //channel.sendMessage((CharSequence) event.getGuild().retrieveBanList()).queue();
-                channel.sendMessage("cringe sto code iznad ne radi").queue();
+            }
+            else if (cmd.equals("slowmode")) {
+                if(!message.getMember().hasPermission(Permission.MANAGE_CHANNEL)) {
+                    channel.sendMessage("You don't have right permissions to execute this command. You need `MANAGE_CHANNEL` permission").queue();
+                    return;
+                }
+                try {
+                    int slowmodeKojiUserZeli = Integer.valueOf(niz_reci[1]);
+                    guildChannelEvil.getManager().setSlowmode(slowmodeKojiUserZeli).queue();
+                    channel.sendMessage(mentionUser + " set the slowmode to " + niz_reci[1] + " seconds").queue();
+
+                } catch (NumberFormatException e) {
+                    // ako opet zaboravim da napisem .queue() mislim da ce se lose stvari desiti
+                    channel.sendMessage("Input you provided is not a number!").queue();
+                    return;
+                }
+            }
+            else if (cmd.equals("slowmode?")) {
+                // iskreno ne volim ovo Integer.toString() u javi ali sta ces
+                // i == je broken pa moras da koristis .equals()
+                String getSlowChannel = Integer.toString(guildChannelEvil.getSlowmode());
+
+                channel.sendMessage("The current slowmode in this channel is `" + getSlowChannel + "` seconds.").queue();
+                // e i da ako citas ovo volim te
+                // volim te i ako ne citas ali razumes poentu
+                // <3
+            }
+            else if (cmd.equals("members")) {
+                // problem: broji i botove, mogu da resim problem jednom FOR petljom ali bas mi se ne svidja to resenje
+                channel.sendMessage("There are " + Integer.toString(event.getGuild().getMemberCount()) + " members in this server").queue();
+            }
+            else if (cmd.equals("say")) {
+                // moj ID, jer drugi nisu dostojni ove komande
+                if(author.getId().equals("716962243400564786")) {
+                    message.delete().queue();
+                    channel.sendMessage(content.substring(5)).queue();
+
+                    // problem: prikazuje samo jednu rec iz cele poruke, jako me mrzi da popravljam, ovo iznad tehnicki radi iako nije najlepse
+                    //channel.sendMessage(niz_reci[1]).queue();
+                } else System.out.println(author.getName() + " pokusava da koristi ovu komandu");
             }
             else if (cmd.equals("embed")) {
                 EmbedBuilder embedBuilder = new EmbedBuilder();
@@ -150,58 +209,6 @@ public class DiscordBot extends ListenerAdapter
                 //channel.sendMessage("message").setEmbeds(embedBuilder.build()).queue();
                 embedBuilder.clear();
 
-            }
-            else if (cmd.equals("slowmode")) {
-                if(!message.getMember().hasPermission(Permission.MANAGE_CHANNEL)) {
-                    channel.sendMessage("You don't have right permissions to execute this command. You need `MANAGE_CHANNEL` permission").queue();
-                    return;
-                }
-                try {
-                    int slowmodeKojiUserZeli = Integer.valueOf(niz_reci[1]);
-                    guildChannelEvil.getManager().setSlowmode(slowmodeKojiUserZeli).queue();
-                    channel.sendMessage(mentionUser + " set the slowmode to " + niz_reci[1] + " seconds").queue();
-
-                } catch (NumberFormatException e) {
-                    // ako opet zaboravim da napisem .queue() mislim da ce se lose stvari desiti
-                    channel.sendMessage("Input you provided is not a number!").queue();
-                    return;
-                }
-            }
-            else if (cmd.equals("slowmode?")) {
-
-                // iskreno ne volim ovo Integer.toString() u javi ali sta ces
-                // i == je broken pa moras da koristis .equals()
-                String getSlowChannel = Integer.toString(guildChannelEvil.getSlowmode());
-
-                channel.sendMessage("The current slowmode in this channel is `" + getSlowChannel + "` seconds.").queue();
-                // e i da ako citas ovo volim te
-                // volim te i ako ne citas ali razumes poentu
-                // <3
-            }
-            else if (cmd.equals("members")) {
-                // problem: broji i botove, mogu da resim problem jednom FOR petljom ali bas mi se ne svidja to resenje
-                channel.sendMessage("There are " + Integer.toString(event.getGuild().getMemberCount()) + " members in this server").queue();
-
-                /*
-                event.getGuild().loadMembers().onSuccess(members -> {
-                    int users = 0;
-                    int bots = 0;
-                    for(Member member: members){
-                        if (member.getUser().isBot()) bots++;
-                        else users++;
-                    }
-                }); // kod zla koji ne treba implementirati, ali nek stoji ovde za slucaj da mi zatreba
-                */
-            }
-            else if (cmd.equals("say")) {
-                // moj ID, jer drugi nisu dostojni ove komande
-                if(author.getId().equals("716962243400564786")) {
-                    message.delete().queue();
-                    channel.sendMessage(content.substring(5)).queue();
-
-                    // problem: prikazuje samo jednu rec iz cele poruke, jako me mrzi da popravljam, ovo iznad tehnicki radi iako nije najlepse
-                    //channel.sendMessage(niz_reci[1]).queue();
-                } else System.out.println(author.getName() + " pokusava da koristi ovu komandu");
             }
             else if (cmd.equals("license")) {
                 // nemam pojma da li je ovo vazno da uradim ali eto nek bude tu
@@ -258,5 +265,22 @@ public class DiscordBot extends ListenerAdapter
         if(general != null) {
             general.sendMessage("The channel: \"" + channelName + "\" voz dilited").queue();
         }
+    }
+
+    private String bankickjezivafunkcija(String[] niz_reci) {
+
+        // bukvalno me ne osudjujte zbog ovoga
+        String reasonBan = "bug";
+        if(niz_reci.length == 2) reasonBan = "No reason provided. This is not a generic message, I rechecked";
+        else if (niz_reci.length == 3) {
+            reasonBan = niz_reci[2];
+        }
+        else if (niz_reci.length > 3) {
+            reasonBan = niz_reci[2];
+            for (int i = 3; i < niz_reci.length; i++) {
+                reasonBan = reasonBan + " " + niz_reci[i];
+            }
+        }
+        return reasonBan;
     }
 }
