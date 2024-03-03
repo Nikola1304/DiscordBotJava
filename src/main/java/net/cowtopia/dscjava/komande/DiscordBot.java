@@ -2,10 +2,7 @@ package net.cowtopia.dscjava.komande;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
@@ -39,14 +36,15 @@ public class DiscordBot extends ListenerAdapter
         String content = message.getContentRaw();
         MessageChannel channel = event.getChannel();
 
-        // ja ne kontam razliku izmedju ovih channela pa sam samo hakovao ovo jer ne znam sta bih drugo
-        TextChannel guildChannelEvil = event.getGuild().getTextChannelById(channel.getId());
-
-
         User author = message.getAuthor();
         String mentionUser = author.getAsMention();
+        Guild guild = event.getGuild();
 
+        // lista svih membera koji su mentionovani u poruci sa koje mozemo da skinemo recimo prvog kada radimo ban, kick, mute itd
+        List<Member> mentionedPeople = message.getMentions().getMembers();
 
+        // ja ne kontam razliku izmedju ovih channela pa sam samo hakovao ovo jer ne znam sta bih drugo
+        TextChannel guildChannelEvil = guild.getTextChannelById(channel.getId());
 
 
         if(author.isBot()) return;
@@ -102,25 +100,50 @@ public class DiscordBot extends ListenerAdapter
                     response.editMessageFormat("Ping: %dms", ping).queue();
                 });
             }
+            else if (cmd.equals("purge")) {
+                if(!message.getMember().hasPermission(Permission.MESSAGE_MANAGE)) {
+                    channel.sendMessage("You don't have right permissions to execute this command. You need `MESSAGE_MANAGE` permission").queue();
+                    return;
+                }
+
+                if(niz_reci.length == 1) {
+                    channel.sendMessage("Please specify an amount of messages you want deleted!").queue();
+                    return;
+                }
+
+                int brojPoruka;
+                try {
+                    brojPoruka = Integer.valueOf(niz_reci[1]);
+                    if(brojPoruka < 0) brojPoruka *= -1; // magic number
+                    brojPoruka += 1; // da obrise i moju purge poruku
+                    if(brojPoruka > 100) brojPoruka = 100;
+                }
+                catch (NumberFormatException e) {
+                    channel.sendMessage("Input you provided is not a number!").queue();
+                    return;
+                }
+
+                List<Message> delMsg = channel.getHistory().retrievePast(brojPoruka).complete();
+                event.getGuildChannel().deleteMessages(delMsg).queue();
+                channel.sendMessage("Suksesfuli purdjed " + (brojPoruka - 1) + " porukica").queue();
+
+            }
             else if(cmd.equals("ban")) {
                 if(!message.getMember().hasPermission(Permission.BAN_MEMBERS)) {
                     channel.sendMessage("You don't have right permissions to execute this command. You need `BAN_MEMBERS` permission").queue();
                     return;
                 }
 
-                // lista svih mentioned membera, sa koje cemo, ako nije prazna, skinuti prvog i njega banovati
-                List<Member> banTargetovi = event.getMessage().getMentions().getMembers();
-
                 // prebacio sam ovo u funkciju jer ce mi trebati za kick (jezivo znam)
                 String reasonBan = bankickjezivafunkcija(niz_reci);
 
-                if(!banTargetovi.isEmpty()) {
-                    //User banUser = banTargetovi.get(0).getUser();
+                if(!mentionedPeople.isEmpty()) {
+                    //User banUser = mentionedPeople.get(0).getUser();
                     //banUser.openPrivateChannel().flatMap(chenl -> chenl.sendMessage("DMovan si")).queue();
 
-                    event.getGuild().ban(banTargetovi.get(0),0, TimeUnit.MINUTES).reason(reasonBan).queue();
+                    guild.ban(mentionedPeople.get(0),0, TimeUnit.MINUTES).reason(reasonBan).queue();
                             //.queueAfter(500, TimeUnit.MILLISECONDS); // timeunit odredjuje koliko ce da ide nazad i obrise poruke
-                    channel.sendMessage(banTargetovi.get(0).getAsMention() + " has been banned!").queue();
+                    channel.sendMessage(mentionedPeople.get(0).getAsMention() + " has been banned!").queue();
                 }
                 else {
                     channel.sendMessage("Specify who you want banned").queue();
@@ -132,12 +155,11 @@ public class DiscordBot extends ListenerAdapter
                     return;
                 }
 
-                List<Member> kickTargets = event.getMessage().getMentions().getMembers();
                 String reasonKick = bankickjezivafunkcija(niz_reci);
 
-                if(!kickTargets.isEmpty()) {
-                    event.getGuild().kick(kickTargets.get(0)).reason(reasonKick).queue();
-                    channel.sendMessage(kickTargets.get(0).getAsMention() + " has been kicked!").queue();
+                if(!mentionedPeople.isEmpty()) {
+                    guild.kick(mentionedPeople.get(0)).reason(reasonKick).queue();
+                    channel.sendMessage(mentionedPeople.get(0).getAsMention() + " has been kicked!").queue();
                 }
                 else {
                     channel.sendMessage("Specify who you want kicked").queue();
@@ -148,8 +170,6 @@ public class DiscordBot extends ListenerAdapter
                     channel.sendMessage("You don't have right permissions to execute this command. You need `MODERATE_MEMBERS` permission").queue();
                     return;
                 }
-
-                List<Member> muteTargets = event.getMessage().getMentions().getMembers();
 
                 TimeUnit vremenskaJedinica = TimeUnit.MINUTES;
                 int duzinaMuta = 5;
@@ -184,7 +204,7 @@ public class DiscordBot extends ListenerAdapter
                     }
                 }
 
-                if(duzinaMuta < 0) duzinaMuta = 5;
+                if(duzinaMuta < 0) duzinaMuta *= -1;
 
                 if (jedinicaMuta == 1) {
                     vremenskaJedinica = TimeUnit.SECONDS;
@@ -194,21 +214,23 @@ public class DiscordBot extends ListenerAdapter
                 {
                     vremenskaJedinica = TimeUnit.HOURS;
                     if (duzinaMuta > 169) duzinaMuta = 169;
-                } else if (jedinicaMuta == 4)
+                }
+                else if (jedinicaMuta == 4)
                 {
                     vremenskaJedinica = TimeUnit.DAYS;
                     if (duzinaMuta > 28) duzinaMuta = 28;
-                } else
+                }
+                else
                 {
                     vremenskaJedinica = TimeUnit.MINUTES;
                     if (duzinaMuta > 1400) duzinaMuta = 1400;
                 }
 
 
-                if(!muteTargets.isEmpty()) {
+                if(!mentionedPeople.isEmpty()) {
                     try {
-                        event.getGuild().timeoutFor(muteTargets.get(0), duzinaMuta, vremenskaJedinica).queue();
-                        channel.sendMessage(muteTargets.get(0).getAsMention() + " has been muted!").queue();
+                        guild.timeoutFor(mentionedPeople.get(0), duzinaMuta, vremenskaJedinica).queue();
+                        channel.sendMessage(mentionedPeople.get(0).getUser().getName() + " has been muted!").queue();
                     }
                     catch (HierarchyException e) {
                         channel.sendMessage("Sorry, I am not allowed to do that").queue();
@@ -227,13 +249,11 @@ public class DiscordBot extends ListenerAdapter
                     return;
                 }
 
-                List<Member> unmuteTargets = event.getMessage().getMentions().getMembers();
-
-                if(!unmuteTargets.isEmpty()) {
+                if(!mentionedPeople.isEmpty()) {
                     // ne proverava da li korisnik ima timeout, ali nije vazno
                     // ako ne moze da uradi to (fizicki, nema permission, member je jaci od njega), samo ce da baci error, fixaj to kasnije
-                    event.getGuild().removeTimeout(unmuteTargets.get(0)).queue();
-                    channel.sendMessage(unmuteTargets.get(0).getAsMention() + " has been unmuted!").queue();
+                    guild.removeTimeout(mentionedPeople.get(0)).queue();
+                    channel.sendMessage(mentionedPeople.get(0).getUser().getName() + " has been unmuted!").queue();
                 }
                 else {
                     channel.sendMessage("Specify who you want unmuted").queue();
@@ -259,7 +279,7 @@ public class DiscordBot extends ListenerAdapter
                 }
                 try {
                     User target = event.getJDA().getUserById(userID);
-                    event.getGuild().unban(target);
+                    guild.unban(target);
                     channel.sendMessage("User with the id " + userID + " has been unbanned!");
                 } catch (IllegalArgumentException e) {
                     // ako opet zaboravim da napisem .queue() mislim da ce se lose stvari desiti
@@ -300,7 +320,7 @@ public class DiscordBot extends ListenerAdapter
             }
             else if (cmd.equals("members")) {
                 // problem: broji i botove, mogu da resim problem jednom FOR petljom ali bas mi se ne svidja to resenje
-                channel.sendMessage("There are " + event.getGuild().getMemberCount() + " members in this server").queue();
+                channel.sendMessage("There are " + guild.getMemberCount() + " members in this server").queue();
             }
             else if (cmd.equals("say")) {
                 // moj ID, jer drugi nisu dostojni ove komande
@@ -327,7 +347,7 @@ public class DiscordBot extends ListenerAdapter
                 // Set the color of the embed
                 embedBuilder.setColor(Color.GREEN);
 
-                embedBuilder.setFooter("Bot created by person", event.getGuild().getOwner().getUser().getAvatarUrl());
+                embedBuilder.setFooter("Bot created by person", guild.getOwner().getUser().getAvatarUrl());
 
                 // Build the embed message
                 MessageEmbed embed = embedBuilder.build();
@@ -352,8 +372,8 @@ public class DiscordBot extends ListenerAdapter
     @Override
     public void onGuildMemberJoin(GuildMemberJoinEvent event)
     {
-        //Guild guild = event.getGuild();
-        TextChannel welcomechannel = event.getGuild().getTextChannelById(welcomechid);
+        Guild guild = event.getGuild();
+        TextChannel welcomechannel = guild.getTextChannelById(welcomechid);
 
         // naravno sve ovo treba poboljsati ali baza je tu
         // dodati lepu porukicu, updatovanje channela sa member listama, potencijalno davanje nekih rolova
@@ -365,22 +385,38 @@ public class DiscordBot extends ListenerAdapter
         // ovo nije najefikasnije na velikim serverima ali ako ikada postanem toliko veliki resavanje ovog problema bice jedan od manjih problema
         // takodje discord API ogranicava promene na channelima na dve promene u 10 minuta
 
-        //event.getGuild().getVoiceChannelById(1211789463475327067L).getManager().setName("Total Users: " + event.getGuild().getMembers().size()).queue();
+        //guild.getVoiceChannelById(1211789463475327067L).getManager().setName("Total Users: " + guild.getMembers().size()).queue();
         // ubijam API ovime, ostavicu ga disabled za sada (27.02.2024.)
-        //event.getGuild().getVoiceChannelById(membersvcid).getManager().setName("Members: " + event.getGuild().getMemberCount()).queue();
+        //guild.getVoiceChannelById(membersvcid).getManager().setName("Members: " + guild.getMemberCount()).queue();
     }
 
     @Override
     public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
-        //Guild guild = event.getGuild();
-        TextChannel leavechannel = event.getGuild().getTextChannelById(leavechid);
+        Guild guild = event.getGuild();
+        TextChannel leavechannel = guild.getTextChannelById(leavechid);
         // bruhh sta je ovo
-        //List<TextChannel> leavechlist = event.getGuild().getTextChannelsByName("welcome",true);
+        //List<TextChannel> leavechlist = guild.getTextChannelsByName("welcome",true);
 
 
         // Isto kao i za welcome
         leavechannel.sendMessage(event.getUser().getAsMention() + " has left the server.").queue();
-        //event.getGuild().getVoiceChannelById(membersvcid).getManager().setName("Members: " + event.getGuild().getMemberCount()).queue();
+        //guild.getVoiceChannelById(membersvcid).getManager().setName("Members: " + guild.getMemberCount()).queue();
+    }
+
+    private String bankickjezivafunkcija(String[] niz_reci) {
+
+        // bukvalno me ne osudjujte zbog ovoga
+        String reasonBan = "bug";
+        if(niz_reci.length == 2) reasonBan = "No reason provided. " + DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now());
+        else if (niz_reci.length > 2) {
+            reasonBan = niz_reci[2];
+            if (niz_reci.length > 3) {
+                for (int i = 3; i < niz_reci.length; i++) {
+                    reasonBan = reasonBan + " " + niz_reci[i];
+                }
+            }
+        }
+        return reasonBan;
     }
 
     // potencijalno maknuti deo koda ispod ovog komentara
@@ -395,20 +431,5 @@ public class DiscordBot extends ListenerAdapter
         }
     }
 
-    private String bankickjezivafunkcija(String[] niz_reci) {
 
-        // bukvalno me ne osudjujte zbog ovoga
-        String reasonBan = "bug";
-        if(niz_reci.length == 2) reasonBan = "No reason provided. " + DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now());
-        else if (niz_reci.length == 3) {
-            reasonBan = niz_reci[2];
-        }
-        else if (niz_reci.length > 3) {
-            reasonBan = niz_reci[2];
-            for (int i = 3; i < niz_reci.length; i++) {
-                reasonBan = reasonBan + " " + niz_reci[i];
-            }
-        }
-        return reasonBan;
-    }
 }
