@@ -12,10 +12,13 @@ import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -44,6 +47,8 @@ public class DiscordBot extends ListenerAdapter
         String mentionUser = author.getAsMention();
 
 
+
+
         if(author.isBot()) return;
 
         // problem: attachment moze da bude nesto drugo osim slike (zip, pdf, bla bla bla)
@@ -63,6 +68,7 @@ public class DiscordBot extends ListenerAdapter
         if(content.contains(event.getJDA().getSelfUser().getAsMention())) {
             // zadatak: promeni ovo u nesto korisno
             channel.sendMessage("Tagovanje bota funkcionise jejjjj").queue();
+            return; // da sprecim da korisnik radi nesto sa botom
         }
 
         // KOMANDE SA PREFIXOM
@@ -75,6 +81,7 @@ public class DiscordBot extends ListenerAdapter
             //channel.sendMessage(cmd).queue();
 
             // pretvara celu poruku u niz stringova, onda mogu da biram sta mi treba :)
+            // bug: ako stavim 2 razmaka napravi gluposti
             String[] niz_reci = necmd.split("\\s");
 
             if(cmd.equals("help")) {
@@ -136,12 +143,129 @@ public class DiscordBot extends ListenerAdapter
                     channel.sendMessage("Specify who you want kicked").queue();
                 }
             }
-            else if(cmd.equals("unban")) {
-                if(!message.getMember().hasPermission(Permission.BAN_MEMBERS)) {
+            else if (cmd.equals("mute")) {
+                if(!message.getMember().hasPermission(Permission.MODERATE_MEMBERS)) {
+                    channel.sendMessage("You don't have right permissions to execute this command. You need `MODERATE_MEMBERS` permission").queue();
+                    return;
+                }
+
+                List<Member> muteTargets = event.getMessage().getMentions().getMembers();
+
+                TimeUnit vremenskaJedinica = TimeUnit.MINUTES;
+                int duzinaMuta = 5;
+                int jedinicaMuta = 2;
+                //if(niz_reci.length == 1) channel.sendMessage("Specify who you want muted").queue();
+                //else if (niz_reci.length == 2) channel.sendMessage("Give time").queue();
+                //else if (niz_reci.length == 3) channel.sendMessage("Give time unit").queue();
+                if (niz_reci.length >= 4)
+                {
+                    try
+                    {
+                        duzinaMuta = Integer.valueOf(niz_reci[2]);
+                        jedinicaMuta = Integer.valueOf(niz_reci[3]);
+
+                    } catch (NumberFormatException e)
+                    {
+                        // ako opet zaboravim da napisem .queue() mislim da ce se lose stvari desiti
+                        channel.sendMessage("Input you provided is not a number!").queue();
+                        return;
+                    }
+                }
+                else if (niz_reci.length == 3) {
+                    try
+                    {
+                        duzinaMuta = Integer.valueOf(niz_reci[2]);
+
+                    }
+                    catch (NumberFormatException e)
+                    {
+                        channel.sendMessage("Input you provided is not a number!").queue();
+                        return;
+                    }
+                }
+
+                if(duzinaMuta < 0) duzinaMuta = 5;
+
+                if (jedinicaMuta == 1) {
+                    vremenskaJedinica = TimeUnit.SECONDS;
+                    if (duzinaMuta > 10800) duzinaMuta = 10800;
+                }
+                else if (jedinicaMuta == 3)
+                {
+                    vremenskaJedinica = TimeUnit.HOURS;
+                    if (duzinaMuta > 169) duzinaMuta = 169;
+                } else if (jedinicaMuta == 4)
+                {
+                    vremenskaJedinica = TimeUnit.DAYS;
+                    if (duzinaMuta > 28) duzinaMuta = 28;
+                } else
+                {
+                    vremenskaJedinica = TimeUnit.MINUTES;
+                    if (duzinaMuta > 1400) duzinaMuta = 1400;
+                }
+
+
+                if(!muteTargets.isEmpty()) {
+                    try {
+                        event.getGuild().timeoutFor(muteTargets.get(0), duzinaMuta, vremenskaJedinica).queue();
+                        channel.sendMessage(muteTargets.get(0).getAsMention() + " has been muted!").queue();
+                    }
+                    catch (HierarchyException e) {
+                        channel.sendMessage("Sorry, I am not allowed to do that").queue();
+                    }
+
+
+                }
+                else {
+                    channel.sendMessage("Specify who you want muted").queue();
+                }
+
+            }
+            else if (cmd.equals("unmute")) {
+                if(!message.getMember().hasPermission(Permission.MODERATE_MEMBERS)) {
+                    channel.sendMessage("You don't have right permissions to execute this command. You need `MODERATE_MEMBERS` permission").queue();
+                    return;
+                }
+
+                List<Member> unmuteTargets = event.getMessage().getMentions().getMembers();
+
+                if(!unmuteTargets.isEmpty()) {
+                    // ne proverava da li korisnik ima timeout, ali nije vazno
+                    // ako ne moze da uradi to (fizicki, nema permission, member je jaci od njega), samo ce da baci error, fixaj to kasnije
+                    event.getGuild().removeTimeout(unmuteTargets.get(0)).queue();
+                    channel.sendMessage(unmuteTargets.get(0).getAsMention() + " has been unmuted!").queue();
+                }
+                else {
+                    channel.sendMessage("Specify who you want unmuted").queue();
+                }
+            }
+            else if (cmd.equals("unban")) {
+                if (!message.getMember().hasPermission(Permission.BAN_MEMBERS)) {
                     channel.sendMessage("You don't have right permissions to execute this command. You need `BAN_MEMBERS` permission").queue();
                     return;
                 }
-                channel.sendMessage("Mrzi me da implementiram sada").queue();
+
+                if(niz_reci.length == 1)  channel.sendMessage("Specify who you want unbanned").queue();
+
+                // fix this mess
+
+                long userID;
+                try {
+                    userID = Long.valueOf(niz_reci[1]);
+                }
+                catch (NumberFormatException e ) {
+                    channel.sendMessage("Input you provided is not a number!").queue();
+                    return;
+                }
+                try {
+                    User target = event.getJDA().getUserById(userID);
+                    event.getGuild().unban(target);
+                    channel.sendMessage("User with the id " + userID + " has been unbanned!");
+                } catch (IllegalArgumentException e) {
+                    // ako opet zaboravim da napisem .queue() mislim da ce se lose stvari desiti
+                    channel.sendMessage("Input you provided is not an ID!").queue();
+                    return;
+                }
                 //channel.sendMessage((CharSequence) event.getGuild().retrieveBanList()).queue();
             }
             else if (cmd.equals("slowmode")) {
@@ -150,9 +274,13 @@ public class DiscordBot extends ListenerAdapter
                     return;
                 }
                 try {
-                    int slowmodeKojiUserZeli = Integer.valueOf(niz_reci[1]);
+                    // int slowmodeKojiUserZeli = Math.Abs(Integer.valueOf(niz_reci[1]));
+                    short slowmodeKojiUserZeli = Short.valueOf(niz_reci[1]); // ne postoji razlog zasto sam ga ogranicio na short
+                    if(slowmodeKojiUserZeli < 0) slowmodeKojiUserZeli *= -1;
+                    if(slowmodeKojiUserZeli > 21600) slowmodeKojiUserZeli = 21600; // hard limit za slowmode
+
                     guildChannelEvil.getManager().setSlowmode(slowmodeKojiUserZeli).queue();
-                    channel.sendMessage(mentionUser + " set the slowmode to " + niz_reci[1] + " seconds").queue();
+                    channel.sendMessage(mentionUser + " set the slowmode to " + slowmodeKojiUserZeli + " seconds").queue();
 
                 } catch (NumberFormatException e) {
                     // ako opet zaboravim da napisem .queue() mislim da ce se lose stvari desiti
@@ -163,16 +291,16 @@ public class DiscordBot extends ListenerAdapter
             else if (cmd.equals("slowmode?")) {
                 // iskreno ne volim ovo Integer.toString() u javi ali sta ces
                 // i == je broken pa moras da koristis .equals()
-                String getSlowChannel = Integer.toString(guildChannelEvil.getSlowmode());
+                //String getSlowChannel = Integer.toString(guildChannelEvil.getSlowmode());
 
-                channel.sendMessage("The current slowmode in this channel is `" + getSlowChannel + "` seconds.").queue();
+                channel.sendMessage("The current slowmode in this channel is `" + guildChannelEvil.getSlowmode() + "` seconds.").queue();
                 // e i da ako citas ovo volim te
                 // volim te i ako ne citas ali razumes poentu
                 // <3
             }
             else if (cmd.equals("members")) {
                 // problem: broji i botove, mogu da resim problem jednom FOR petljom ali bas mi se ne svidja to resenje
-                channel.sendMessage("There are " + Integer.toString(event.getGuild().getMemberCount()) + " members in this server").queue();
+                channel.sendMessage("There are " + event.getGuild().getMemberCount() + " members in this server").queue();
             }
             else if (cmd.equals("say")) {
                 // moj ID, jer drugi nisu dostojni ove komande
@@ -271,7 +399,7 @@ public class DiscordBot extends ListenerAdapter
 
         // bukvalno me ne osudjujte zbog ovoga
         String reasonBan = "bug";
-        if(niz_reci.length == 2) reasonBan = "No reason provided. This is not a generic message, I rechecked";
+        if(niz_reci.length == 2) reasonBan = "No reason provided. " + DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now());
         else if (niz_reci.length == 3) {
             reasonBan = niz_reci[2];
         }
