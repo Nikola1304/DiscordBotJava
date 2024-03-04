@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
@@ -26,6 +27,7 @@ public class DiscordBot extends ListenerAdapter
     static final long leavechid = welcomechid;
     static final long generalchid = 910094414175694879L;
     static final long membersvcid = 1211789463475327067L;
+    static final long suggestchid = 1213992313332699166L;
 
 
     @Override
@@ -39,6 +41,8 @@ public class DiscordBot extends ListenerAdapter
         User author = message.getAuthor();
         String mentionUser = author.getAsMention();
         Guild guild = event.getGuild();
+
+        Member authorMember = guild.getMemberById(author.getId());
 
         // lista svih membera koji su mentionovani u poruci sa koje mozemo da skinemo recimo prvog kada radimo ban, kick, mute itd
         List<Member> mentionedPeople = message.getMentions().getMembers();
@@ -174,9 +178,6 @@ public class DiscordBot extends ListenerAdapter
                 TimeUnit vremenskaJedinica = TimeUnit.MINUTES;
                 int duzinaMuta = 5;
                 int jedinicaMuta = 2;
-                //if(niz_reci.length == 1) channel.sendMessage("Specify who you want muted").queue();
-                //else if (niz_reci.length == 2) channel.sendMessage("Give time").queue();
-                //else if (niz_reci.length == 3) channel.sendMessage("Give time unit").queue();
                 if (niz_reci.length >= 4)
                 {
                     try
@@ -235,13 +236,10 @@ public class DiscordBot extends ListenerAdapter
                     catch (HierarchyException e) {
                         channel.sendMessage("Sorry, I am not allowed to do that").queue();
                     }
-
-
                 }
                 else {
                     channel.sendMessage("Specify who you want muted").queue();
                 }
-
             }
             else if (cmd.equals("unmute")) {
                 if(!message.getMember().hasPermission(Permission.MODERATE_MEMBERS)) {
@@ -265,7 +263,10 @@ public class DiscordBot extends ListenerAdapter
                     return;
                 }
 
-                if(niz_reci.length == 1)  channel.sendMessage("Specify who you want unbanned").queue();
+                if(niz_reci.length == 1) {
+                    channel.sendMessage("Specify who you want unbanned").queue();
+                    return;
+                }
 
                 // fix this mess
 
@@ -280,13 +281,22 @@ public class DiscordBot extends ListenerAdapter
                 try {
                     User target = event.getJDA().getUserById(userID);
                     guild.unban(target);
-                    channel.sendMessage("User with the id " + userID + " has been unbanned!");
+                    channel.sendMessage("User with the id " + userID + " has been unbanned!").queue();
                 } catch (IllegalArgumentException e) {
                     // ako opet zaboravim da napisem .queue() mislim da ce se lose stvari desiti
                     channel.sendMessage("Input you provided is not an ID!").queue();
                     return;
                 }
                 //channel.sendMessage((CharSequence) event.getGuild().retrieveBanList()).queue();
+            }
+            else if (cmd.equals("ticket")) {
+
+                // dodaj delete channel, locking, deletion, pravilne permissione za membera (iritantno)
+
+                guild.createTextChannel("ticket-" + author.getName().toLowerCase()).queue();
+                        //.addPermissionOverride(author, Permission.VIEW_CHANNEL, null))
+                        //.addPermissionOverride(guild.getPublicRole(), null, Permission.VIEW_CHANNEL))
+                        //.queue();
             }
             else if (cmd.equals("slowmode")) {
                 if(!message.getMember().hasPermission(Permission.MANAGE_CHANNEL)) {
@@ -318,9 +328,37 @@ public class DiscordBot extends ListenerAdapter
                 // volim te i ako ne citas ali razumes poentu
                 // <3
             }
+            else if (cmd.equals("suggest")) {
+                if(niz_reci.length == 1) {
+                    message.reply("Please provide a valid suggestion").queue();
+                    return;
+                }
+                guild.getTextChannelById(suggestchid).sendMessage(author.getName() + " suggests: " + content.substring(9)).queue(suggestmsg -> {
+                    suggestmsg.addReaction(Emoji.fromUnicode("\u2705")).queue();
+                    suggestmsg.addReaction(Emoji.fromUnicode("\u274c")).queue();
+                });
+            }
             else if (cmd.equals("members")) {
                 // problem: broji i botove, mogu da resim problem jednom FOR petljom ali bas mi se ne svidja to resenje
                 channel.sendMessage("There are " + guild.getMemberCount() + " members in this server").queue();
+            }
+            else if (cmd.equals("avatar")) {
+                Member avatarMember;
+                if(mentionedPeople.isEmpty()) {
+                    avatarMember = authorMember;
+                }
+                else {
+                    avatarMember = mentionedPeople.get(0);
+                }
+                EmbedBuilder avatarEmbed = new EmbedBuilder();
+                avatarEmbed.setTitle(avatarMember.getUser().getName() + "'s avatar");
+                // podesi velicinu avatara
+                avatarEmbed.setImage(avatarMember.getUser().getAvatarUrl());
+                // https://www.tabnine.com/code/java/methods/net.dv8tion.jda.core.entities.User/getEffectiveAvatarUrl
+                avatarEmbed.setFooter("Requested by " + author.getName());
+                avatarEmbed.setColor(Color.BLUE);
+                channel.sendMessageEmbeds(avatarEmbed.build()).queue();
+                avatarEmbed.clear();
             }
             else if (cmd.equals("say")) {
                 // moj ID, jer drugi nisu dostojni ove komande
