@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
@@ -17,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -49,6 +51,8 @@ public class DiscordBot extends ListenerAdapter
 
         // ja ne kontam razliku izmedju ovih channela pa sam samo hakovao ovo jer ne znam sta bih drugo
         TextChannel guildChannelEvil = guild.getTextChannelById(channel.getId());
+
+        GuildChannel guildChannel = guild.getGuildChannelById(channel.getId());
 
 
         if(author.isBot()) return;
@@ -291,12 +295,63 @@ public class DiscordBot extends ListenerAdapter
             }
             else if (cmd.equals("ticket")) {
 
-                // dodaj delete channel, locking, deletion, pravilne permissione za membera (iritantno)
+                String chStart = "ticket-";
+                EnumSet<Permission> permsTicket = EnumSet.of(Permission.VIEW_CHANNEL,Permission.MESSAGE_SEND);
 
-                guild.createTextChannel("ticket-" + author.getName().toLowerCase()).queue();
-                        //.addPermissionOverride(author, Permission.VIEW_CHANNEL, null))
-                        //.addPermissionOverride(guild.getPublicRole(), null, Permission.VIEW_CHANNEL))
-                        //.queue();
+                if(channel.getName().startsWith(chStart)) {
+                    if(niz_reci.length >= 2) {
+                        if (niz_reci[1].equals("delete")) {
+                            channel.delete().queue();
+                        }
+                        else if (niz_reci[1].equals("close")) {
+                            channel.sendMessage("ne radi cigan glupi").queue();
+
+                            String imeTicketOwnera = channel.getName().substring(7);
+                            Long idTicketOwnera = Long.parseLong(imeTicketOwnera);
+                            //User userTicketOwner = event.getJDA().getUserById(idTicketOwnera);
+                            Member memberTicketOwner = guild.getMemberById(idTicketOwnera);
+
+                            // task za buduceg mene: skontaj kako da clearas sve da bude default bez da to unosis manualno
+                            // (da se user fizicki izbrise iz channel cuda, a ne samo da mu povuce perms)
+                            guildChannelEvil.upsertPermissionOverride(memberTicketOwner).clear(permsTicket).queue();
+
+
+
+                            // Role role = guild.getRoleById(817427547678703668L);
+                            //PermissionOverride override = guildChannelEvil.getPermissionOverride(role); // Get an existing override for a role
+                            //if (override.equals(null)) {
+                            //    override = guildChannelEvil.createPermissionOverride(role);//.complete(); // Create a new override if it doesn't exist
+                            //}
+                            //override.getManager().grant(Permission.VIEW_CHANNEL, Permission.MESSAGE_SEND).queue();
+
+                            // List<PermissionOverride> overrides = guildChannelEvil.upsertPermissionOverride()
+
+                            // Remove all existing permission overrides
+                            //for (PermissionOverride override : overrides) {
+                            //    override.delete().queue();
+                            //}
+
+                            //guildChannelEvil.upsertPermissionOverride(role).deny(Permission.VIEW_CHANNEL).queue();
+
+                            // Member member = guild.getMemberById("member_id_here");
+                            // guild.addRoleToMember(member, role).queue();
+                            // guildChannelEvil.getMemberPermissionOverrides(Permission.MESSAGE_SEND)
+                        }
+                        else {
+                            channel.sendMessage("Provide me with something valid").queue();
+                        }
+                        return;
+                    }
+                    else {
+                        channel.sendMessage("Please provide me with some arguments").queue();
+                    }
+                }
+                else {
+                    guild.createTextChannel(chStart + author.getId()).setTopic("This ticket was created by " + author.getName()).queue(ticketch -> {
+                        ticketch.upsertPermissionOverride(authorMember).grant(permsTicket).queue();
+                        ticketch.upsertPermissionOverride(guild.getPublicRole()).deny(permsTicket).queue();
+                    });
+                }
             }
             else if (cmd.equals("slowmode")) {
                 if(!message.getMember().hasPermission(Permission.MANAGE_CHANNEL)) {
@@ -341,6 +396,20 @@ public class DiscordBot extends ListenerAdapter
             else if (cmd.equals("members")) {
                 // problem: broji i botove, mogu da resim problem jednom FOR petljom ali bas mi se ne svidja to resenje
                 channel.sendMessage("There are " + guild.getMemberCount() + " members in this server").queue();
+            }
+            else if (cmd.equals("lock")) {
+                if(!message.getMember().hasPermission(Permission.MANAGE_CHANNEL)) {
+                    channel.sendMessage("You don't have right permissions to execute this command. You need `MANAGE_CHANNEL` permission").queue();
+                    return;
+                }
+                guildChannelEvil.upsertPermissionOverride(guild.getPublicRole()).deny(Permission.MESSAGE_SEND).queue();
+            }
+            else if (cmd.equals("unlock")) {
+                if(!message.getMember().hasPermission(Permission.MANAGE_CHANNEL)) {
+                    channel.sendMessage("You don't have right permissions to execute this command. You need `MANAGE_CHANNEL` permission").queue();
+                    return;
+                }
+                guildChannelEvil.upsertPermissionOverride(guild.getPublicRole()).grant(Permission.MESSAGE_SEND).queue();
             }
             else if (cmd.equals("avatar")) {
                 Member avatarMember;
@@ -455,6 +524,13 @@ public class DiscordBot extends ListenerAdapter
             }
         }
         return reasonBan;
+    }
+
+    private void permMsg(Permission perm, String permtxt, Message message, MessageChannel channel) {
+        if(!message.getMember().hasPermission(perm)) {
+            channel.sendMessage("You don't have right permissions to execute this command. You need `" + permtxt + "` permission").queue();
+            return;
+        }
     }
 
     // potencijalno maknuti deo koda ispod ovog komentara
