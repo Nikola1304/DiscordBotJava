@@ -54,6 +54,8 @@ public class DiscordBot extends ListenerAdapter
 
         GuildChannel guildChannel = guild.getGuildChannelById(channel.getId());
 
+        Role everyoneRole = guild.getPublicRole();
+
 
         if(author.isBot()) return;
 
@@ -95,6 +97,10 @@ public class DiscordBot extends ListenerAdapter
             }
             else if (cmd.equals("invite")) {
                 message.reply("https://discord.gg/zrEUQENmRr").queue();
+            }
+            else if (cmd.equals("crnjanski")) {
+                // nemam pojma sta ovo radi
+                channel.sendMessage(author.retrieveProfile().toString()).queue();
             }
             else if (cmd.equals("ping")) {
 
@@ -303,8 +309,7 @@ public class DiscordBot extends ListenerAdapter
                         if (niz_reci[1].equals("delete")) {
                             channel.delete().queue();
                         }
-                        else if (niz_reci[1].equals("close")) {
-                            channel.sendMessage("ne radi cigan glupi").queue();
+                        else if (niz_reci[1].equals("lock")) {
 
                             String imeTicketOwnera = channel.getName().substring(7);
                             Long idTicketOwnera = Long.parseLong(imeTicketOwnera);
@@ -347,9 +352,9 @@ public class DiscordBot extends ListenerAdapter
                     }
                 }
                 else {
-                    guild.createTextChannel(chStart + author.getId()).setTopic("This ticket was created by " + author.getName()).queue(ticketch -> {
+                    guild.createTextChannel(chStart + author.getId()).setTopic("This ticket was created by " + author.getName() + " with reason: " + content.substring(8)).queue(ticketch -> {
                         ticketch.upsertPermissionOverride(authorMember).grant(permsTicket).queue();
-                        ticketch.upsertPermissionOverride(guild.getPublicRole()).deny(permsTicket).queue();
+                        ticketch.upsertPermissionOverride(everyoneRole).deny(permsTicket).queue();
                     });
                 }
             }
@@ -386,12 +391,24 @@ public class DiscordBot extends ListenerAdapter
             else if (cmd.equals("suggest")) {
                 if(niz_reci.length == 1) {
                     message.reply("Please provide a valid suggestion").queue();
-                    return;
                 }
-                guild.getTextChannelById(suggestchid).sendMessage(author.getName() + " suggests: " + content.substring(9)).queue(suggestmsg -> {
-                    suggestmsg.addReaction(Emoji.fromUnicode("\u2705")).queue();
-                    suggestmsg.addReaction(Emoji.fromUnicode("\u274c")).queue();
-                });
+                else
+                {
+                    // https://charbase.com/1f44d-unicode-thumbs-up-sign
+                    message.addReaction(Emoji.fromUnicode("\ud83d\udc4d")).queue();
+                    EmbedBuilder sugEmbedBuild = new EmbedBuilder();
+                    sugEmbedBuild.setTitle(author.getName() + " suggests");
+                    sugEmbedBuild.setDescription(content.substring(9));
+                    sugEmbedBuild.setColor(5724148);
+                    sugEmbedBuild.setFooter(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").format(LocalDateTime.now()),authorMember.getUser().getAvatarUrl());
+                    MessageEmbed sugEmbed = sugEmbedBuild.build();
+
+                    guild.getTextChannelById(suggestchid).sendMessageEmbeds(sugEmbed).queue(suggestmsg -> {
+                        suggestmsg.addReaction(Emoji.fromUnicode("\u2705")).queue();
+                        suggestmsg.addReaction(Emoji.fromUnicode("\u274c")).queue();
+                    });
+                    sugEmbedBuild.clear();
+                }
             }
             else if (cmd.equals("members")) {
                 // problem: broji i botove, mogu da resim problem jednom FOR petljom ali bas mi se ne svidja to resenje
@@ -402,14 +419,14 @@ public class DiscordBot extends ListenerAdapter
                     channel.sendMessage("You don't have right permissions to execute this command. You need `MANAGE_CHANNEL` permission").queue();
                     return;
                 }
-                guildChannelEvil.upsertPermissionOverride(guild.getPublicRole()).deny(Permission.MESSAGE_SEND).queue();
+                guildChannelEvil.upsertPermissionOverride(everyoneRole).deny(Permission.MESSAGE_SEND).queue();
             }
             else if (cmd.equals("unlock")) {
                 if(!message.getMember().hasPermission(Permission.MANAGE_CHANNEL)) {
                     channel.sendMessage("You don't have right permissions to execute this command. You need `MANAGE_CHANNEL` permission").queue();
                     return;
                 }
-                guildChannelEvil.upsertPermissionOverride(guild.getPublicRole()).grant(Permission.MESSAGE_SEND).queue();
+                guildChannelEvil.upsertPermissionOverride(everyoneRole).grant(Permission.MESSAGE_SEND).queue();
             }
             else if (cmd.equals("avatar")) {
                 Member avatarMember;
