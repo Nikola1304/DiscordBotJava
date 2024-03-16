@@ -17,9 +17,11 @@ import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
+import net.dv8tion.jda.api.requests.restaction.CacheRestAction;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
+import java.net.CacheRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
@@ -46,7 +48,7 @@ public class DiscordBot extends ListenerAdapter
         User author = event.getMember().getUser();
         String mentionUser = author.getAsMention();
 
-        Member authorMember = guild.getMemberById(author.getId());
+        Member authorMember = event.getMember();
         TextChannel textChannel = guild.getTextChannelById(channel.getId());
 
         if(name.equals("fart")) {
@@ -160,17 +162,15 @@ public class DiscordBot extends ListenerAdapter
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
-
-
         Message message = event.getMessage();
         String content = message.getContentRaw();
         MessageChannel channel = event.getChannel();
 
-        User author = message.getAuthor();
+        User author = event.getAuthor();
         String mentionUser = author.getAsMention();
         Guild guild = event.getGuild();
 
-        Member authorMember = guild.getMemberById(author.getId());
+        Member authorMember = event.getMember();
 
         // lista svih membera koji su mentionovani u poruci sa koje mozemo da skinemo recimo prvog kada radimo ban, kick, mute itd
         List<Member> mentionedPeople = message.getMentions().getMembers();
@@ -198,11 +198,13 @@ public class DiscordBot extends ListenerAdapter
         if(content.equals("ping")) {
             channel.sendMessage("Pong!").queue();
         }
+        else if(content.equals("kys")){
+            channel.sendMessage("No, u").queue();
+        }
 
+        // this exists to prevent user to acidentally ban this bot
         if(content.contains(event.getJDA().getSelfUser().getAsMention())) {
-            // zadatak: promeni ovo u nesto korisno
-            channel.sendMessage("Tagovanje bota funkcionise jejjjj").queue();
-            return; // da sprecim da korisnik radi nesto sa botom
+            return;
         }
 
         // KOMANDE SA PREFIXOM
