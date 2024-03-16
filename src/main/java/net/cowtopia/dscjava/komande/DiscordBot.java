@@ -10,9 +10,13 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -31,6 +35,128 @@ public class DiscordBot extends ListenerAdapter
     static final long membersvcid = 1211789463475327067L;
     static final long suggestchid = 1213992313332699166L;
 
+
+    @Override
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+
+        Guild guild = event.getGuild();
+        String name = event.getName();
+        MessageChannel channel = event.getChannel();
+
+        User author = event.getMember().getUser();
+        String mentionUser = author.getAsMention();
+
+        Member authorMember = guild.getMemberById(author.getId());
+        TextChannel textChannel = guild.getTextChannelById(channel.getId());
+
+        if(name.equals("fart")) {
+            //event.reply("You just farted").queue();
+
+            event.deferReply().queue();
+            //event.getHook().sendMessage("You just farted").queue();
+
+            // samo user vidi ovo
+            // bar se nadam
+            event.getHook().sendMessage("You just farted").setEphemeral(true).queue();
+        }
+        else if(name.equals("food")) {
+
+            OptionMapping option = event.getOption("foodname");
+
+            if(option.equals(null)) {
+                event.reply("for some reason I cant explain, a food name was not provided").queue();
+                return;
+            }
+
+            String favouriteFood = option.getAsString();
+            event.reply("Your favourite food is " + favouriteFood).queue();
+        }
+        else if(name.equals("sum")) {
+            OptionMapping operand1 = event.getOption("operand1");
+            OptionMapping operand2 = event.getOption("operand2");
+
+            if(operand1 == null || operand2 == null) {
+                event.reply("No numbers were provided!").queue();
+                return;
+            }
+
+            int sum = operand1.getAsInt() + operand2.getAsInt();
+            event.reply("The sum is: " + sum).queue();
+        }
+        else if(name.equals("ping")) {
+            long startTime = System.currentTimeMillis();
+            event.reply("Pinging...").queue(response -> {
+                long endTime = System.currentTimeMillis();
+                long ping = endTime - startTime;
+                response.editOriginal("Ping: " + ping + "ms").queue();
+            });
+        }
+        else if(name.equals("members")) {
+            event.reply("There are" + guild.getMemberCount() + "members in this server").queue();
+        }
+        else if(name.equals("slowmode-amount")) {
+            event.reply("The current slowmode in this channel is `" + textChannel.getSlowmode() + "` seconds.").queue();
+        }
+        else if(name.equals("avatar")) {
+            OptionMapping avatarOption = event.getOption("user");
+            Member avatarMember = authorMember;
+            if(avatarOption != null) {
+                avatarMember = avatarOption.getAsMember();
+            }
+
+            EmbedBuilder avatarEmbed = new EmbedBuilder();
+            avatarEmbed.setTitle(avatarMember.getUser().getName() + "'s avatar");
+            avatarEmbed.setImage(avatarMember.getUser().getAvatarUrl());
+            avatarEmbed.setFooter("Requested by " + author.getName());
+            avatarEmbed.setColor(Color.BLUE);
+
+            event.replyEmbeds(avatarEmbed.build()).queue();
+            avatarEmbed.clear();
+        }
+        else if(name.equals("mute")) {
+            if(!authorMember.hasPermission(Permission.BAN_MEMBERS)) {
+                event.reply("You don't have right permissions to execute this command. You need `BAN_MEMBERS` permission").queue();
+                return;
+            }
+            OptionMapping muteUsr = event.getOption("user");
+            OptionMapping amountMute = event.getOption("amount");
+            OptionMapping typeMute = event.getOption("type");
+            //OptionMapping reasonMute = event.getOption("reason");
+
+            Member muteUser = muteUsr.getAsMember();
+            int duzinaMuta = amountMute.getAsInt();
+            int jedinicaMuta = typeMute.getAsInt();
+            /*
+            String reason = "No reason provided";
+            if(reasonMute != null) {
+                reason = reasonMute.getAsString();
+            }*/
+
+            TimeUnit vremenskaJedinica = TimeUnit.MINUTES;
+
+            if (jedinicaMuta == 1) {
+                vremenskaJedinica = TimeUnit.SECONDS;
+                if (duzinaMuta > 10800) duzinaMuta = 10800;
+            }
+            else if (jedinicaMuta == 3) {
+                vremenskaJedinica = TimeUnit.HOURS;
+                if (duzinaMuta > 169) duzinaMuta = 169;
+            } else if (jedinicaMuta == 4) {
+                vremenskaJedinica = TimeUnit.DAYS;
+                if (duzinaMuta > 28) duzinaMuta = 28;
+            } else {
+                vremenskaJedinica = TimeUnit.MINUTES;
+                if (duzinaMuta > 1400) duzinaMuta = 1400;
+            }
+            try {
+                guild.timeoutFor(muteUser, duzinaMuta, vremenskaJedinica).queue();
+                event.reply(muteUser.getUser().getName() + " has been muted").queue();
+            }
+            catch (HierarchyException e) {
+                event.reply("Sorry, I do not have sufficient permissions to do that").queue();
+            }
+        }
+    }
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
@@ -86,11 +212,18 @@ public class DiscordBot extends ListenerAdapter
         if(content.startsWith(prefix)) {
             String necmd = content.substring(1);
             String cmd = necmd.replaceAll("\\s.*", "").toLowerCase();
+
             //channel.sendMessage(cmd).queue();
 
             // pretvara celu poruku u niz stringova, onda mogu da biram sta mi treba :)
             // bug: ako stavim 2 razmaka napravi gluposti
             String[] niz_reci = necmd.split("\\s");
+
+            // radi proveru da li je korisnik uneo jos neki podatak osim same komande
+            boolean contentPostoji = true;
+            String msgContentRaw = "Placeholder";
+            if(niz_reci.length > 1) msgContentRaw = content.substring(cmd.length()+2);
+            else contentPostoji = false;
 
             if(cmd.equals("help")) {
                 channel.sendMessage("Nema tebi pomoci decko").queue();
@@ -98,9 +231,10 @@ public class DiscordBot extends ListenerAdapter
             else if (cmd.equals("invite")) {
                 message.reply("https://discord.gg/zrEUQENmRr").queue();
             }
-            else if (cmd.equals("crnjanski")) {
+            else if (cmd.equals("eksperiment")) {
                 // nemam pojma sta ovo radi
                 channel.sendMessage(author.retrieveProfile().toString()).queue();
+                channel.sendMessage("Kolicina podatka data botu: " + Integer.toString(niz_reci.length)).queue();
             }
             else if (cmd.equals("ping")) {
 
@@ -119,8 +253,7 @@ public class DiscordBot extends ListenerAdapter
                     channel.sendMessage("You don't have right permissions to execute this command. You need `MESSAGE_MANAGE` permission").queue();
                     return;
                 }
-
-                if(niz_reci.length == 1) {
+                if(!contentPostoji) {
                     channel.sendMessage("Please specify an amount of messages you want deleted!").queue();
                     return;
                 }
@@ -305,7 +438,8 @@ public class DiscordBot extends ListenerAdapter
                 EnumSet<Permission> permsTicket = EnumSet.of(Permission.VIEW_CHANNEL,Permission.MESSAGE_SEND);
 
                 if(channel.getName().startsWith(chStart)) {
-                    if(niz_reci.length >= 2) {
+                    if(contentPostoji) {
+                    //if(niz_reci.length >= 2) {
                         if (niz_reci[1].equals("delete")) {
                             channel.delete().queue();
                         }
@@ -352,7 +486,7 @@ public class DiscordBot extends ListenerAdapter
                     }
                 }
                 else {
-                    guild.createTextChannel(chStart + author.getId()).setTopic("This ticket was created by " + author.getName() + " with reason: " + content.substring(8)).queue(ticketch -> {
+                    guild.createTextChannel(chStart + author.getId()).setTopic("This ticket was created by " + author.getName() + " with reason: " + msgContentRaw).queue(ticketch -> {
                         ticketch.upsertPermissionOverride(authorMember).grant(permsTicket).queue();
                         ticketch.upsertPermissionOverride(everyoneRole).deny(permsTicket).queue();
                     });
@@ -361,6 +495,10 @@ public class DiscordBot extends ListenerAdapter
             else if (cmd.equals("slowmode")) {
                 if(!message.getMember().hasPermission(Permission.MANAGE_CHANNEL)) {
                     channel.sendMessage("You don't have right permissions to execute this command. You need `MANAGE_CHANNEL` permission").queue();
+                    return;
+                }
+                if(!contentPostoji) {
+                    message.reply("Please provide me with slowmode you want set.").queue();
                     return;
                 }
                 try {
@@ -389,7 +527,7 @@ public class DiscordBot extends ListenerAdapter
                 // <3
             }
             else if (cmd.equals("suggest")) {
-                if(niz_reci.length == 1) {
+                if(!contentPostoji) {
                     message.reply("Please provide a valid suggestion").queue();
                 }
                 else
@@ -398,7 +536,7 @@ public class DiscordBot extends ListenerAdapter
                     message.addReaction(Emoji.fromUnicode("\ud83d\udc4d")).queue();
                     EmbedBuilder sugEmbedBuild = new EmbedBuilder();
                     sugEmbedBuild.setTitle(author.getName() + " suggests");
-                    sugEmbedBuild.setDescription(content.substring(9));
+                    sugEmbedBuild.setDescription(msgContentRaw);
                     sugEmbedBuild.setColor(5724148);
                     sugEmbedBuild.setFooter(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").format(LocalDateTime.now()),authorMember.getUser().getAvatarUrl());
                     MessageEmbed sugEmbed = sugEmbedBuild.build();
@@ -426,7 +564,7 @@ public class DiscordBot extends ListenerAdapter
                     channel.sendMessage("You don't have right permissions to execute this command. You need `MANAGE_CHANNEL` permission").queue();
                     return;
                 }
-                guildChannelEvil.upsertPermissionOverride(everyoneRole).grant(Permission.MESSAGE_SEND).queue();
+                guildChannelEvil.upsertPermissionOverride(everyoneRole).clear(Permission.MESSAGE_SEND).queue();
             }
             else if (cmd.equals("avatar")) {
                 Member avatarMember;
@@ -449,11 +587,13 @@ public class DiscordBot extends ListenerAdapter
             else if (cmd.equals("say")) {
                 // moj ID, jer drugi nisu dostojni ove komande
                 if(author.getId().equals("716962243400564786")) {
-                    message.delete().queue();
-                    channel.sendMessage(content.substring(5)).queue();
-
-                    // problem: prikazuje samo jednu rec iz cele poruke, jako me mrzi da popravljam, ovo iznad tehnicki radi iako nije najlepse
-                    //channel.sendMessage(niz_reci[1]).queue();
+                    if(niz_reci.length > 1) {
+                        message.delete().queue();
+                        channel.sendMessage(msgContentRaw).queue();
+                    }
+                    else {
+                        channel.sendMessage("Tell me what to say").queue();
+                    }
                 } else System.out.println(author.getName() + " pokusava da koristi ovu komandu");
             }
             else if (cmd.equals("embed")) {
@@ -490,7 +630,7 @@ public class DiscordBot extends ListenerAdapter
 
         // samo provera kada je bilo koja poruka poslata na server, ukloniti u finalnoj verziji da bi se smanjilo trosenje resursa
         //event.getChannel().sendMessage("This was sent: " + content).queue();
-        System.out.println("Poruka je poslata (java prejaka)");
+        // System.out.println("Poruka je poslata (java prejaka)");
     }
 
     @Override
@@ -555,12 +695,18 @@ public class DiscordBot extends ListenerAdapter
     public void onChannelDelete(@NotNull ChannelDeleteEvent event) {
         String channelName = event.getChannel().getName();
 
-        TextChannel general = event.getGuild().getTextChannelById(generalchid);
+        TextChannel channel = event.getGuild().getTextChannelById(1218562604830560266L);
 
-        if(general != null) {
-            general.sendMessage("The channel: \"" + channelName + "\" voz dilited").queue();
+        if(channel != null) {
+            channel.sendMessage("The channel: \"" + channelName + "\" was deleted").queue();
         }
     }
 
-
+    /*
+    @Override
+    public void onReady(@NotNull ReadyEvent event) {
+        Guild guild = event.getJDA().getGuildById(817404696687673454L);
+        TextChannel channel = guild.getTextChannelById(generalchid);
+        channel.sendMessage("Podigao sam se iz mrtvih").queue();
+    }*/
 }

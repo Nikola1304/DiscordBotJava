@@ -60,3 +60,58 @@ In this code:
     If no users are mentioned, we send a message indicating that the user(s) to be banned should be mentioned.
 
 To use this command, register the BanCommand as an event listener with your JDA instance, similar to previous examples. Ensure that your bot has the necessary permissions to ban users in the server.
+
+
+
+
+
+
+
+
+
+
+
+
+Guild guild=event.getGuild();
+Member member=event.getMentionedMembers().get(0);//TODO check if exists
+guild.ban(member,0,"ban command").queue();
+
+
+
+# in code
+
+
+String[] args = event.getMessage().getContentRaw().split("\\s+"); // gets message from mod and splits every whitespace.
+
+if (args[0].equalsIgnoreCase(Main.prefix + "ban")) {
+if(args.length==1){//no argument
+//error message
+}
+else if(event.getMentionedMembers().isEmpty()){//no mentioned members, try to use argument as ID
+event.getGuild().ban(args[1],0,"ban command").queue();
+}else{//mentioned members
+
+        event.getGuild().ban(event.getMentionedMembers().get(0),0,"ban command").queue();
+    }
+
+}
+
+
+
+
+
+
+
+MEMBER LIST (BEZ BOTOVA)
+
+
+/*
+event.getGuild().loadMembers().onSuccess(members -> {
+int users = 0;
+int bots = 0;
+for(Member member: members){
+if (member.getUser().isBot()) bots++;
+else users++;
+}
+}); // kod zla koji ne treba implementirati, ali nek stoji ovde za slucaj da mi zatreba
+*/
