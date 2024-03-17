@@ -51,7 +51,11 @@ public class DiscordBot extends ListenerAdapter
         Member authorMember = event.getMember();
         TextChannel textChannel = guild.getTextChannelById(channel.getId());
 
-        if(name.equals("fart")) {
+        Role everyoneRole = guild.getPublicRole();
+
+        String hierarchyExMsg = "Sorry, I do not have sufficient permissions to do that";
+
+        if(name.equals("help")) {
             //event.reply("You just farted").queue();
 
             event.deferReply().queue();
@@ -59,7 +63,7 @@ public class DiscordBot extends ListenerAdapter
 
             // samo user vidi ovo
             // bar se nadam
-            event.getHook().sendMessage("You just farted").setEphemeral(true).queue();
+            event.getHook().sendMessage("Nema tebi pomoci decko").setEphemeral(true).queue();
         }
         else if(name.equals("food")) {
 
@@ -84,6 +88,9 @@ public class DiscordBot extends ListenerAdapter
 
             int sum = operand1.getAsInt() + operand2.getAsInt();
             event.reply("The sum is: " + sum).queue();
+        }
+        else if(name.equals("invite")) {
+            event.reply("https://discord.gg/zrEUQENmRr").queue();
         }
         else if(name.equals("ping")) {
             long startTime = System.currentTimeMillis();
@@ -114,6 +121,31 @@ public class DiscordBot extends ListenerAdapter
 
             event.replyEmbeds(avatarEmbed.build()).queue();
             avatarEmbed.clear();
+        }
+        else if(name.equals("purge")) {
+            int brojPoruka = (event.getOption("amount")).getAsInt();
+            List<Message> delMsg = channel.getHistory().retrievePast(brojPoruka).complete();
+            event.getGuildChannel().deleteMessages(delMsg).queue();
+            event.reply("Successfully purged " + brojPoruka + " messages").queue();
+        }
+        else if(name.equals("suggest")) {
+            String content = (event.getOption("content")).getAsString();
+
+            // https://charbase.com/1f44d-unicode-thumbs-up-sign
+            EmbedBuilder sugEmbedBuild = new EmbedBuilder();
+            sugEmbedBuild.setTitle(author.getName() + " suggests");
+            sugEmbedBuild.setDescription(content);
+            sugEmbedBuild.setColor(5724148);
+            sugEmbedBuild.setFooter(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").format(LocalDateTime.now()),authorMember.getUser().getAvatarUrl());
+            MessageEmbed sugEmbed = sugEmbedBuild.build();
+
+            guild.getTextChannelById(suggestchid).sendMessageEmbeds(sugEmbed).queue(suggestmsg -> {
+                suggestmsg.addReaction(Emoji.fromUnicode("\u2705")).queue();
+                suggestmsg.addReaction(Emoji.fromUnicode("\u274c")).queue();
+            });
+            sugEmbedBuild.clear();
+
+            event.reply("You just created a new suggestion").setEphemeral(true).queue();
         }
         else if(name.equals("mute")) {
             if(!authorMember.hasPermission(Permission.BAN_MEMBERS)) {
@@ -155,8 +187,138 @@ public class DiscordBot extends ListenerAdapter
                 event.reply(muteUser.getUser().getName() + " has been muted").queue();
             }
             catch (HierarchyException e) {
-                event.reply("Sorry, I do not have sufficient permissions to do that").queue();
+                event.reply(hierarchyExMsg).queue();
             }
+        }
+        else if(name.equals("kick")) {
+            OptionMapping kickUsr = event.getOption("user");
+            OptionMapping reasonKick = event.getOption("reason");
+
+            Member kickUser = kickUsr.getAsMember();
+            String reason = "No reason provided";
+
+            if(reasonKick != null)
+                reason = reasonKick.getAsString();
+
+            try {
+                guild.kick(kickUser).reason(reason).queue();
+                event.reply(kickUser.getUser().getName() + " has been kicked").queue();
+            }
+            catch (HierarchyException e) {
+                event.reply(hierarchyExMsg).queue();
+            }
+        }
+        else if(name.equals("ban")) {
+            if(!authorMember.hasPermission(Permission.BAN_MEMBERS)) {
+                event.reply("You don't have right permissions to execute this command. You need `BAN_MEMBERS` permission").queue();
+                return;
+            }
+            OptionMapping banUsr = event.getOption("user");
+            OptionMapping reasonBan = event.getOption("reason");
+
+            Member banUser = banUsr.getAsMember();
+            String reason = "No reason provided";
+
+            if(reasonBan != null) {
+                reason = reasonBan.getAsString();
+            }
+
+            try {
+                guild.ban(banUser,0,TimeUnit.MINUTES).reason(reason).queue();
+                event.reply(banUser.getUser().getName() + " has been banned").queue();
+            }
+            catch (HierarchyException e) {
+                event.reply(hierarchyExMsg).queue();
+            }
+        }
+        else if(name.equals("ticket")) {
+            String chStart = "ticket-";
+            EnumSet<Permission> permsTicket = EnumSet.of(Permission.VIEW_CHANNEL,Permission.MESSAGE_SEND);
+            OptionMapping argumnt = event.getOption("argument");
+            String argument = argumnt.getAsString();
+
+            if(channel.getName().startsWith(chStart)) {
+                if(authorMember.hasPermission(Permission.MANAGE_CHANNEL)) {
+                    if(argument.equals("delete")) {
+                        channel.delete().queue();
+                        event.deferReply().queue();
+                    }
+                    else if(argument.equals("lock")) {
+                        // dis stil daznt vrk kil mi
+                        String imeTicketOwnera = channel.getName().substring(7);
+                        Long idTicketOwnera = Long.parseLong(imeTicketOwnera);
+                        User memberTicketOw = event.getJDA().getUserById(idTicketOwnera);
+                        Member memberTicketOwner = event.getGuild().getMember(memberTicketOw); //.useCache(false)
+                        textChannel.upsertPermissionOverride(memberTicketOwner).clear(permsTicket).queue();
+                        event.reply("Ticket successfully locked").queue();
+                    }
+                    else {
+                        event.reply("Wrong input provided").queue();
+                    }
+                }
+                else event.reply("Insufficient permissions").queue();
+            }
+            else {
+                guild.createTextChannel(chStart + author.getId()).setTopic("This ticket was created by " + author.getName() + " with reason: " + argument).queue(ticketch -> {
+                    ticketch.upsertPermissionOverride(authorMember).grant(permsTicket).queue();
+                    ticketch.upsertPermissionOverride(everyoneRole).deny(permsTicket).queue();
+                    event.reply("<#" + ticketch.getId() +"> successfully created!").queue();
+                });
+            }
+        }
+        else if(name.equals("slowmode")) {
+            int amount = (event.getOption("amount")).getAsInt();
+            textChannel.getManager().setSlowmode(amount).queue();
+            event.reply(mentionUser + " set the slowmode to " + amount + " seconds").queue();
+        }
+        else if(name.equals("unmute")) {
+            OptionMapping unmuteUsr = event.getOption("user");
+            Member unmuteUser = unmuteUsr.getAsMember();
+
+            try {
+                guild.removeTimeout(unmuteUser).queue();
+                event.reply(unmuteUser.getUser().getName() + " has been unmuted").queue();
+            }
+            catch (HierarchyException e) {
+                event.reply(hierarchyExMsg).queue();
+            }
+        }
+        else if(name.equals("lock")) {
+            textChannel.upsertPermissionOverride(everyoneRole).deny(Permission.MESSAGE_SEND).queue();
+            event.reply("Channel successfully locked!").setEphemeral(true).queue();
+        }
+        else if(name.equals("unlock")) {
+            textChannel.upsertPermissionOverride(everyoneRole).clear(Permission.MESSAGE_SEND).queue();
+            event.reply("Channel successfully unlocked!").setEphemeral(true).queue();
+        }
+        else if(name.equals("embed")) {
+            EmbedBuilder embedBuilder = new EmbedBuilder();
+
+            // Set the title of the embed
+            embedBuilder.setTitle("Example Embed");
+
+            // Set the description of the embed
+            embedBuilder.setDescription("This is a simple example of an embed message.");
+
+            embedBuilder.addField("Fraza 1)", "Stuff", false);
+            embedBuilder.addField("Fraza 2)", "Stuff", false);
+
+            // Set the color of the embed
+            embedBuilder.setColor(Color.GREEN);
+
+            embedBuilder.setFooter("Bot created by person", guild.getOwner().getUser().getAvatarUrl());
+
+            // Build the embed message
+            MessageEmbed embed = embedBuilder.build();
+
+            // Send the embed message to the channel
+            //channel.sendMessageEmbeds(embed).queue();
+            event.replyEmbeds(embed).queue();
+            //channel.sendMessage("message").setEmbeds(embedBuilder.build()).queue();
+            embedBuilder.clear();
+        }
+        else if(name.equals("license")) {
+            event.reply("https://github.com/Nikola1304/DiscordBotJava/blob/main/LICENSE").queue();
         }
     }
 
@@ -178,7 +340,9 @@ public class DiscordBot extends ListenerAdapter
         // ja ne kontam razliku izmedju ovih channela pa sam samo hakovao ovo jer ne znam sta bih drugo
         TextChannel guildChannelEvil = guild.getTextChannelById(channel.getId());
 
-        GuildChannel guildChannel = guild.getGuildChannelById(channel.getId());
+
+        //GuildChannel guildChannel = guild.getGuildChannelById(channel.getId());
+        GuildChannel guildChannel = event.getGuildChannel();
 
         Role everyoneRole = guild.getPublicRole();
 
@@ -274,7 +438,7 @@ public class DiscordBot extends ListenerAdapter
 
                 List<Message> delMsg = channel.getHistory().retrievePast(brojPoruka).complete();
                 event.getGuildChannel().deleteMessages(delMsg).queue();
-                channel.sendMessage("Suksesfuli purdjed " + (brojPoruka - 1) + " porukica").queue();
+                channel.sendMessage("Successfully purged " + (brojPoruka - 1) + " messages").queue();
 
             }
             else if(cmd.equals("ban")) {
@@ -481,7 +645,6 @@ public class DiscordBot extends ListenerAdapter
                         else {
                             channel.sendMessage("Provide me with something valid").queue();
                         }
-                        return;
                     }
                     else {
                         channel.sendMessage("Please provide me with some arguments").queue();
