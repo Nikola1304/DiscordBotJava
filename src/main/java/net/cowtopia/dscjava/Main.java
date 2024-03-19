@@ -16,6 +16,8 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import javax.security.auth.login.LoginException;
 
+import static net.dv8tion.jda.api.utils.MemberCachePolicy.ALL;
+
 public class Main
 {
     public static void main(String[] args) throws LoginException, InterruptedException
@@ -27,6 +29,7 @@ public class Main
                 // dozvole koje discord trazi da dodam iz nekog razloga (check msg content, check member)
                 .enableIntents(GatewayIntent.GUILD_MEMBERS,GatewayIntent.GUILD_PRESENCES,GatewayIntent.GUILD_MESSAGES,GatewayIntent.MESSAGE_CONTENT)
                 //.enableCache(CacheFlag.MEMBER_OVERRIDES,CacheFlag.ACTIVITY)
+                .setMemberCachePolicy(ALL)
                 .build().awaitReady();
         // ovaj line cini bota 10000x brzim
         System.out.println("Hello world!");
@@ -120,6 +123,7 @@ public class Main
                     .queue();
             guild.upsertCommand("lock","Locks channel").setDefaultPermissions(DefaultMemberPermissions.DISABLED).queue();
             guild.upsertCommand("unlock","Unlocks channel").setDefaultPermissions(DefaultMemberPermissions.DISABLED).queue();
+            guild.upsertCommand("serverinfo","Shows server info").queue();
             guild.upsertCommand("embed","Creates example embed").queue();
             guild.upsertCommand("license","Shows you code license (maybe useful)").queue();
 

@@ -291,17 +291,40 @@ public class DiscordBot extends ListenerAdapter
             textChannel.upsertPermissionOverride(everyoneRole).clear(Permission.MESSAGE_SEND).queue();
             event.reply("Channel successfully unlocked!").setEphemeral(true).queue();
         }
+        else if(name.equals("serverinfo")){
+
+            EmbedBuilder sinfoEmb = new EmbedBuilder()
+                    .setTitle(guild.getName())
+                    .setThumbnail(guild.getIconUrl())
+                    .setColor(Color.BLUE)
+
+                    .addField("Owner", guild.getOwner().getUser().getName(), true)
+                    .addField("Members", Integer.toString(guild.getMemberCount()), true)
+                    .addField("Roles", Integer.toString(guild.getRoles().size()), true)
+                    .addField("Category Channels", Integer.toString(guild.getCategories().size()), true)
+                    .addField("Text Channels", Integer.toString(guild.getTextChannels().size()), true)
+                    .addField("Voice Channels", Integer.toString(guild.getVoiceChannels().size()), true)
+
+                    .setFooter("ID: " + guild.getId() + " | Server created: " + DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").format(guild.getTimeCreated()));
+
+            event.replyEmbeds(sinfoEmb.build()).queue();
+        }
         else if(name.equals("embed")) {
             EmbedBuilder embedBuilder = new EmbedBuilder();
 
             // Set the title of the embed
             embedBuilder.setTitle("Example Embed");
+            embedBuilder.setAuthor("setAuthor +-/*");
 
             // Set the description of the embed
             embedBuilder.setDescription("This is a simple example of an embed message.");
 
-            embedBuilder.addField("Fraza 1)", "Stuff", false);
-            embedBuilder.addField("Fraza 2)", "Stuff", false);
+            embedBuilder.addField("Fraza 1)", "Stuff", true); // false == imace svoj odvojen red
+            embedBuilder.addField("Fraza 2)", "Stuff", true); // jedan red se popuni kad ih ima 3 pa predje u naredni
+            embedBuilder.addField("Fraza 3)", "Stuff", true);
+            embedBuilder.addField("Fraza 4)", "Stuff", true);
+            embedBuilder.addField("Fraza 5)", "Stuff", true);
+            embedBuilder.addField("Fraza 6)", "Stuff", true);
 
             // Set the color of the embed
             embedBuilder.setColor(Color.GREEN);
@@ -338,7 +361,7 @@ public class DiscordBot extends ListenerAdapter
         List<Member> mentionedPeople = message.getMentions().getMembers();
 
         // ja ne kontam razliku izmedju ovih channela pa sam samo hakovao ovo jer ne znam sta bih drugo
-        TextChannel guildChannelEvil = guild.getTextChannelById(channel.getId());
+        TextChannel textChannel = guild.getTextChannelById(channel.getId());
 
 
         //GuildChannel guildChannel = guild.getGuildChannelById(channel.getId());
@@ -348,6 +371,17 @@ public class DiscordBot extends ListenerAdapter
 
 
         if(author.isBot()) return;
+        // this exists to prevent user to acidentally ban this bot
+        if(content.contains(event.getJDA().getSelfUser().getAsMention())) {
+            return;
+        }
+
+        /*
+        channel.sendMessage("author: " + author +
+                "\nmember: " + authorMember + "" +
+                "\nmember1: " + guild.getMemberById(author.getId())).queue();
+         */
+
 
         // problem: attachment moze da bude nesto drugo osim slike (zip, pdf, bla bla bla)
         // mozda problem: mozes da napises tekst kad posaljes sliku
@@ -366,11 +400,6 @@ public class DiscordBot extends ListenerAdapter
             channel.sendMessage("No, u").queue();
         }
 
-        // this exists to prevent user to acidentally ban this bot
-        if(content.contains(event.getJDA().getSelfUser().getAsMention())) {
-            return;
-        }
-
         if (content.startsWith("!say")) {
             // moj ID, jer drugi nisu dostojni ove komande
             if(author.getId().equals("716962243400564786")) {
@@ -383,10 +412,6 @@ public class DiscordBot extends ListenerAdapter
                 }
             } else System.out.println(author.getName() + " pokusava da koristi ovu komandu");
         }
-
-        // samo provera kada je bilo koja poruka poslata na server, ukloniti u finalnoj verziji da bi se smanjilo trosenje resursa
-        //event.getChannel().sendMessage("This was sent: " + content).queue();
-        // System.out.println("Poruka je poslata (java prejaka)");
     }
 
     @Override
