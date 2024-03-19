@@ -42,6 +42,7 @@ public class Main
 
         Guild guild = bot.getGuildById(817404696687673454L);
 
+        // ignorisati ovo, test
         Command.Choice choiceSeconds = new Command.Choice("Seconds", 1);
         Command.Choice choiceMinutes = new Command.Choice("Minutes", 2);
         Command.Choice choiceHours = new Command.Choice("Hours", 3);
@@ -113,7 +114,7 @@ public class Main
             guild.upsertCommand("slowmode","Sets slowmode in current channel")
                     .addOptions(
                             new OptionData(OptionType.INTEGER,"amount","New slowmode time (seconds)",true)
-                                .setRequiredRange(1,21600)
+                                .setRequiredRange(0,21600)
                     )
                     .setDefaultPermissions(DefaultMemberPermissions.DISABLED)
                     .queue();

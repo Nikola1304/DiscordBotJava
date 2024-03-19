@@ -3,6 +3,7 @@ package net.cowtopia.dscjava.komande;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
@@ -36,6 +37,7 @@ public class DiscordBot extends ListenerAdapter
     static final long generalchid = 910094414175694879L;
     static final long membersvcid = 1211789463475327067L;
     static final long suggestchid = 1213992313332699166L;
+    static final long ticketsCat = 1219763274141405214L;
 
 
     @Override
@@ -237,6 +239,8 @@ public class DiscordBot extends ListenerAdapter
             OptionMapping argumnt = event.getOption("argument");
             String argument = argumnt.getAsString();
 
+            Category ticketsCategory = event.getGuild().getCategoryById(ticketsCat);
+
             if(channel.getName().startsWith(chStart)) {
                 if(authorMember.hasPermission(Permission.MANAGE_CHANNEL)) {
                     if(argument.equals("delete")) {
@@ -259,7 +263,7 @@ public class DiscordBot extends ListenerAdapter
                 else event.reply("Insufficient permissions").queue();
             }
             else {
-                guild.createTextChannel(chStart + author.getId()).setTopic("This ticket was created by " + author.getName() + " with reason: " + argument).queue(ticketch -> {
+                ticketsCategory.createTextChannel(chStart + author.getId()).setTopic("This ticket was created by " + author.getName() + " with reason: " + argument).queue(ticketch -> {
                     ticketch.upsertPermissionOverride(authorMember).grant(permsTicket).queue();
                     ticketch.upsertPermissionOverride(everyoneRole).deny(permsTicket).queue();
                     event.reply("<#" + ticketch.getId() +"> successfully created!").queue();
