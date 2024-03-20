@@ -12,12 +12,18 @@ import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.requests.restaction.CacheRestAction;
 import org.jetbrains.annotations.NotNull;
 
@@ -392,16 +398,31 @@ public class DiscordBot extends ListenerAdapter
         if(channel.getName().equals("images")) {
             if(message.getAttachments().isEmpty()) {
                 message.delete().queue();
-                return;
             }
+            return;
         //if(channel.getId().equals("910103074490699826")) {
-        }
+        } else if(channel.getName().equals("counting")) {
+            channel.getHistory().retrievePast(2)
+                    .map(messages -> messages.get(1)) // ovo pretpostavlja da u channelu postoji makar 2 poruke (prethodna i tvoja)
+                    .queue(msg -> { // success callback
+                        if(msg.getAuthor().getId().equals(author.getId())) {
+                            message.delete().queue();
+                        }
+                        // bug - ako korisnik edita poruku, bice obrisana jer moze da zbuni counting bota, ali to utice da counting streak bude cudan (1 2 4 5 6 8 9 10 11 15 16 17...)
+                        // bug2 - mora da postoji makar jedan broj (aka poruka) u channelu da bi radilo
+                        else {
+                            try {
+                                if(Integer.parseInt(message.getContentRaw()) != (Integer.parseInt(msg.getContentRaw()) + 1)) message.delete().queue();
+                            }
+                            catch (NumberFormatException e) {
+                                message.delete().queue();
+                            }
 
-        if(content.equals("ping")) {
-            channel.sendMessage("Pong!").queue();
-        }
-        else if(content.equals("kys")){
-            channel.sendMessage("No, u").queue();
+                            // System.out.println("The second most recent message is: " + msg.getContentDisplay());
+                        }
+
+                    });
+            return;
         }
 
         if (content.startsWith("!say")) {
@@ -415,6 +436,34 @@ public class DiscordBot extends ListenerAdapter
                     channel.sendMessage("Tell me what to say").queue();
                 }
             } else System.out.println(author.getName() + " pokusava da koristi ovu komandu");
+            return;
+        }
+
+        if(content.equals("ping")) {
+            channel.sendMessage("Pong!").queue();
+        }
+        else if(content.equals("kys")){
+            channel.sendMessage("No, u").queue();
+        }
+    }
+
+
+    public void onButtonInteraction(ButtonInteractionEvent event) {
+
+    }
+
+    @Override
+    public void onMessageUpdate(@NotNull MessageUpdateEvent event) {
+        MessageChannel channel = event.getChannel();
+        Message message = event.getMessage();
+
+
+        if(channel.getName().equals("counting")) {
+            channel.getHistory().retrievePast(1)
+                    .map(messages -> messages.get(0))
+                    .queue(msg -> { // success callback
+                        if(message.equals(msg)) msg.delete().queue();
+                    });
         }
     }
 
@@ -450,29 +499,6 @@ public class DiscordBot extends ListenerAdapter
         // Isto kao i za welcome
         leavechannel.sendMessage(event.getUser().getAsMention() + " has left the server.").queue();
         //guild.getVoiceChannelById(membersvcid).getManager().setName("Members: " + guild.getMemberCount()).queue();
-    }
-
-    private String bankickjezivafunkcija(String[] niz_reci) {
-
-        // bukvalno me ne osudjujte zbog ovoga
-        String reasonBan = "bug";
-        if(niz_reci.length == 2) reasonBan = "No reason provided. " + DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now());
-        else if (niz_reci.length > 2) {
-            reasonBan = niz_reci[2];
-            if (niz_reci.length > 3) {
-                for (int i = 3; i < niz_reci.length; i++) {
-                    reasonBan = reasonBan + " " + niz_reci[i];
-                }
-            }
-        }
-        return reasonBan;
-    }
-
-    private void permMsg(Permission perm, String permtxt, Message message, MessageChannel channel) {
-        if(!message.getMember().hasPermission(perm)) {
-            channel.sendMessage("You don't have right permissions to execute this command. You need `" + permtxt + "` permission").queue();
-            return;
-        }
     }
 
     // potencijalno maknuti deo koda ispod ovog komentara
