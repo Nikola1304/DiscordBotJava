@@ -1,51 +1,33 @@
-package net.cowtopia.dscjava.komande;
+package net.cowtopia.dscjava.listeners;
 
+import net.cowtopia.dscjava.Main;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
-import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
-import net.dv8tion.jda.api.requests.restaction.CacheRestAction;
 import org.jetbrains.annotations.NotNull;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 import java.awt.*;
-import java.net.CacheRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class DiscordBot extends ListenerAdapter
+public class SlashListeners extends ListenerAdapter
 {
-    public static final String prefix = "!";
-    static final long welcomechid = 910130241664602144L;
-    static final long leavechid = welcomechid;
-    static final long generalchid = 910094414175694879L;
-    static final long membersvcid = 1211789463475327067L;
-    static final long suggestchid = 1213992313332699166L;
-    static final long ticketsCat = 1219763274141405214L;
-
-
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
 
@@ -97,6 +79,47 @@ public class DiscordBot extends ListenerAdapter
             int sum = operand1.getAsInt() + operand2.getAsInt();
             event.reply("The sum is: " + sum).queue();
         }
+        else if(name.equals("sup")) {
+            TextInput nameModal = TextInput.create("sup-name","Name", TextInputStyle.SHORT)
+                    .setMinLength(1)
+                    .setRequired(true)
+                    .setPlaceholder("The recipient")
+                    .build();
+
+            TextInput messageModal = TextInput.create("sup-message","Message",TextInputStyle.PARAGRAPH)
+                    .setMinLength(10)
+                    .setMaxLength(100)
+                    .setRequired(true)
+                    .setValue("You smell like a wet sock")
+                    .build();
+
+            Modal modal = Modal.create("sup-modal","Say Wassup")
+                    .addActionRows(ActionRow.of(nameModal), ActionRow.of(messageModal))
+                    .build();
+
+            event.replyModal(modal).queue();
+        }
+        else if (name.equals("multiply")) {
+            TextInput operand1 = TextInput.create("operand1","Operand 1",TextInputStyle.SHORT)
+                    .setPlaceholder("Enter a number")
+                    .setMinLength(1)
+                    .setMaxLength(11)
+                    .setRequired(true)
+                    .build();
+
+            TextInput operand2 = TextInput.create("operand2","Operand 2",TextInputStyle.SHORT)
+                    .setPlaceholder("Enter a number")
+                    .setMinLength(1)
+                    .setMaxLength(11)
+                    .setRequired(true)
+                    .build();
+
+            Modal modal = Modal.create("multiply-modal","Multiply")
+                    .addActionRows(ActionRow.of(operand1),ActionRow.of(operand2))
+                    .build();
+
+            event.replyModal(modal).queue();
+        }
         else if(name.equals("invite")) {
             event.reply("https://discord.gg/zrEUQENmRr").queue();
         }
@@ -147,7 +170,7 @@ public class DiscordBot extends ListenerAdapter
             sugEmbedBuild.setFooter(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").format(LocalDateTime.now()),authorMember.getUser().getAvatarUrl());
             MessageEmbed sugEmbed = sugEmbedBuild.build();
 
-            guild.getTextChannelById(suggestchid).sendMessageEmbeds(sugEmbed).queue(suggestmsg -> {
+            guild.getTextChannelById(Main.suggestchid).sendMessageEmbeds(sugEmbed).queue(suggestmsg -> {
                 suggestmsg.addReaction(Emoji.fromUnicode("\u2705")).queue();
                 suggestmsg.addReaction(Emoji.fromUnicode("\u274c")).queue();
             });
@@ -245,7 +268,7 @@ public class DiscordBot extends ListenerAdapter
             OptionMapping argumnt = event.getOption("argument");
             String argument = argumnt.getAsString();
 
-            Category ticketsCategory = event.getGuild().getCategoryById(ticketsCat);
+            Category ticketsCategory = event.getGuild().getCategoryById(Main.ticketsCat);
 
             if(channel.getName().startsWith(chStart)) {
                 if(authorMember.hasPermission(Permission.MANAGE_CHANNEL)) {
@@ -317,7 +340,10 @@ public class DiscordBot extends ListenerAdapter
 
                     .setFooter("ID: " + guild.getId() + " | Server created: " + DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").format(guild.getTimeCreated()));
 
-            event.replyEmbeds(sinfoEmb.build()).queue();
+            event.replyEmbeds(sinfoEmb.build()).addActionRow(
+                    Button.primary("view-roles-button", "View Roles"),
+                    Button.primary("view-emojis-button", "View Emojis")
+            ).queue();
         }
         else if(name.equals("embed")) {
             EmbedBuilder embedBuilder = new EmbedBuilder();
@@ -354,170 +380,4 @@ public class DiscordBot extends ListenerAdapter
             event.reply("https://github.com/Nikola1304/DiscordBotJava/blob/main/LICENSE").queue();
         }
     }
-
-    @Override
-    public void onMessageReceived(@NotNull MessageReceivedEvent event) {
-        Message message = event.getMessage();
-        String content = message.getContentRaw();
-        MessageChannel channel = event.getChannel();
-
-        User author = event.getAuthor();
-        String mentionUser = author.getAsMention();
-        Guild guild = event.getGuild();
-
-        Member authorMember = event.getMember();
-
-        // lista svih membera koji su mentionovani u poruci sa koje mozemo da skinemo recimo prvog kada radimo ban, kick, mute itd
-        List<Member> mentionedPeople = message.getMentions().getMembers();
-
-        // ja ne kontam razliku izmedju ovih channela pa sam samo hakovao ovo jer ne znam sta bih drugo
-        TextChannel textChannel = guild.getTextChannelById(channel.getId());
-
-
-        //GuildChannel guildChannel = guild.getGuildChannelById(channel.getId());
-        GuildChannel guildChannel = event.getGuildChannel();
-
-        Role everyoneRole = guild.getPublicRole();
-
-
-        if(author.isBot()) return;
-        // this exists to prevent user to acidentally ban this bot
-        if(content.contains(event.getJDA().getSelfUser().getAsMention())) {
-            return;
-        }
-
-        /*
-        channel.sendMessage("author: " + author +
-                "\nmember: " + authorMember + "" +
-                "\nmember1: " + guild.getMemberById(author.getId())).queue();
-         */
-
-
-        // problem: attachment moze da bude nesto drugo osim slike (zip, pdf, bla bla bla)
-        // mozda problem: mozes da napises tekst kad posaljes sliku
-        if(channel.getName().equals("images")) {
-            if(message.getAttachments().isEmpty()) {
-                message.delete().queue();
-            }
-            return;
-        //if(channel.getId().equals("910103074490699826")) {
-        } else if(channel.getName().equals("counting")) {
-            channel.getHistory().retrievePast(2)
-                    .map(messages -> messages.get(1)) // ovo pretpostavlja da u channelu postoji makar 2 poruke (prethodna i tvoja)
-                    .queue(msg -> { // success callback
-                        if(msg.getAuthor().getId().equals(author.getId())) {
-                            message.delete().queue();
-                        }
-                        // bug - ako korisnik edita poruku, bice obrisana jer moze da zbuni counting bota, ali to utice da counting streak bude cudan (1 2 4 5 6 8 9 10 11 15 16 17...)
-                        // bug2 - mora da postoji makar jedan broj (aka poruka) u channelu da bi radilo
-                        else {
-                            try {
-                                if(Integer.parseInt(message.getContentRaw()) != (Integer.parseInt(msg.getContentRaw()) + 1)) message.delete().queue();
-                            }
-                            catch (NumberFormatException e) {
-                                message.delete().queue();
-                            }
-
-                            // System.out.println("The second most recent message is: " + msg.getContentDisplay());
-                        }
-
-                    });
-            return;
-        }
-
-        if (content.startsWith("!say")) {
-            // moj ID, jer drugi nisu dostojni ove komande
-            if(author.getId().equals("716962243400564786")) {
-                try {
-                    channel.sendMessage(content.substring(5)).queue();
-                    message.delete().queue();
-                }
-                catch (StringIndexOutOfBoundsException e) {
-                    channel.sendMessage("Tell me what to say").queue();
-                }
-            } else System.out.println(author.getName() + " pokusava da koristi ovu komandu");
-            return;
-        }
-
-        if(content.equals("ping")) {
-            channel.sendMessage("Pong!").queue();
-        }
-        else if(content.equals("kys")){
-            channel.sendMessage("No, u").queue();
-        }
-    }
-
-
-    public void onButtonInteraction(ButtonInteractionEvent event) {
-
-    }
-
-    @Override
-    public void onMessageUpdate(@NotNull MessageUpdateEvent event) {
-        MessageChannel channel = event.getChannel();
-        Message message = event.getMessage();
-
-
-        if(channel.getName().equals("counting")) {
-            channel.getHistory().retrievePast(1)
-                    .map(messages -> messages.get(0))
-                    .queue(msg -> { // success callback
-                        if(message.equals(msg)) msg.delete().queue();
-                    });
-        }
-    }
-
-    @Override
-    public void onGuildMemberJoin(GuildMemberJoinEvent event)
-    {
-        Guild guild = event.getGuild();
-        TextChannel welcomechannel = guild.getTextChannelById(welcomechid);
-
-        // naravno sve ovo treba poboljsati ali baza je tu
-        // dodati lepu porukicu, updatovanje channela sa member listama, potencijalno davanje nekih rolova
-
-        //guild.getDefaultChannel().sendMessage("Welcome " + event.getUser().getAsMention() + " to the server!").queue();
-        welcomechannel.sendMessage("Welcome " + event.getUser().getAsMention() + " to the server!").queue();
-
-
-        // ovo nije najefikasnije na velikim serverima ali ako ikada postanem toliko veliki resavanje ovog problema bice jedan od manjih problema
-        // takodje discord API ogranicava promene na channelima na dve promene u 10 minuta
-
-        //guild.getVoiceChannelById(1211789463475327067L).getManager().setName("Total Users: " + guild.getMembers().size()).queue();
-        // ubijam API ovime, ostavicu ga disabled za sada (27.02.2024.)
-        //guild.getVoiceChannelById(membersvcid).getManager().setName("Members: " + guild.getMemberCount()).queue();
-    }
-
-    @Override
-    public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
-        Guild guild = event.getGuild();
-        TextChannel leavechannel = guild.getTextChannelById(leavechid);
-        // bruhh sta je ovo
-        //List<TextChannel> leavechlist = guild.getTextChannelsByName("welcome",true);
-
-
-        // Isto kao i za welcome
-        leavechannel.sendMessage(event.getUser().getAsMention() + " has left the server.").queue();
-        //guild.getVoiceChannelById(membersvcid).getManager().setName("Members: " + guild.getMemberCount()).queue();
-    }
-
-    // potencijalno maknuti deo koda ispod ovog komentara
-    @Override
-    public void onChannelDelete(@NotNull ChannelDeleteEvent event) {
-        String channelName = event.getChannel().getName();
-
-        TextChannel channel = event.getGuild().getTextChannelById(1218562604830560266L);
-
-        if(channel != null) {
-            channel.sendMessage("The channel: \"" + channelName + "\" was deleted").queue();
-        }
-    }
-
-    /*
-    @Override
-    public void onReady(@NotNull ReadyEvent event) {
-        Guild guild = event.getJDA().getGuildById(817404696687673454L);
-        TextChannel channel = guild.getTextChannelById(generalchid);
-        channel.sendMessage("Podigao sam se iz mrtvih").queue();
-    }*/
 }

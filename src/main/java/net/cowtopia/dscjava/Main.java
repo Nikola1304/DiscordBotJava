@@ -1,10 +1,12 @@
 package net.cowtopia.dscjava;
 
 
-import net.cowtopia.dscjava.komande.DiscordBot;
+import net.cowtopia.dscjava.listeners.ButtonListeners;
+import net.cowtopia.dscjava.listeners.DiscordBot;
+import net.cowtopia.dscjava.listeners.SlashListeners;
+import net.cowtopia.dscjava.listeners.WelcomeLeaveListeners;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.commands.Command;
@@ -12,7 +14,6 @@ import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import javax.security.auth.login.LoginException;
 
@@ -20,19 +21,27 @@ import static net.dv8tion.jda.api.utils.MemberCachePolicy.ALL;
 
 public class Main
 {
+    public static final long welcomechid = 910130241664602144L;
+    public static final long leavechid = welcomechid;
+    public static final long generalchid = 910094414175694879L;
+    public static final long membersvcid = 1211789463475327067L;
+    public static final long staffchid = 1220415121730306048L;
+    public static final long suggestchid = 1213992313332699166L;
+    public static final long ticketsCat = 1219763274141405214L;
+
+
     public static void main(String[] args) throws LoginException, InterruptedException
     {
 
         JDA bot = JDABuilder.createDefault(BOT_TOKEN_INSERT_HERE)
                 .setActivity(Activity.watching("you. Ping me for help!"))
-                .addEventListeners(new DiscordBot())
+                .addEventListeners(new DiscordBot(), new ButtonListeners(), new SlashListeners(), new WelcomeLeaveListeners())
                 // dozvole koje discord trazi da dodam iz nekog razloga (check msg content, check member)
                 .enableIntents(GatewayIntent.GUILD_MEMBERS,GatewayIntent.GUILD_PRESENCES,GatewayIntent.GUILD_MESSAGES,GatewayIntent.MESSAGE_CONTENT)
                 //.enableCache(CacheFlag.MEMBER_OVERRIDES,CacheFlag.ACTIVITY)
                 .setMemberCachePolicy(ALL)
                 .build().awaitReady();
-        // ovaj line cini bota 10000x brzim
-        System.out.println("Hello world!");
+
 
         // Global and Guild Commands
         // Global Commands - can be used anywhere: any guild that your bot is in and also in DMs
@@ -64,6 +73,8 @@ public class Main
                                     .setRequiredRange(1,Integer.MAX_VALUE)
                     )
                     .queue();
+            guild.upsertCommand("sup","Says sup to someone").queue();
+            guild.upsertCommand("multiply","Multiplies two numbers").queue();
             guild.upsertCommand("invite","Sends you permanent server invite link").queue();
             guild.upsertCommand("ping","server ping").queue();
             guild.upsertCommand("members","Shows you amount of members in server").queue();
@@ -138,5 +149,8 @@ public class Main
                         .addOption(OptionType.STRING, "foodname", "ime tvoje omiljene hrane",true)
         );
         command.queue();*/
+
+        // ovaj line cini bota 10000x brzim
+        System.out.println("Hello world!");
     }
 }
