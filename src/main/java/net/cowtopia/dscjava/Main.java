@@ -1,6 +1,5 @@
 package net.cowtopia.dscjava;
 
-
 import net.cowtopia.dscjava.listeners.ButtonListeners;
 import net.cowtopia.dscjava.listeners.DiscordBot;
 import net.cowtopia.dscjava.listeners.SlashListeners;
@@ -32,7 +31,6 @@ public class Main
 
     public static void main(String[] args) throws LoginException, InterruptedException
     {
-
         JDA bot = JDABuilder.createDefault(BOT_TOKEN_INSERT_HERE)
                 .setActivity(Activity.watching("you. Ping me for help!"))
                 .addEventListeners(new DiscordBot(), new ButtonListeners(), new SlashListeners(), new WelcomeLeaveListeners())
@@ -85,7 +83,7 @@ public class Main
             guild.upsertCommand("purge","Deletes specified amount of messages")
                     .addOptions(
                             new OptionData(OptionType.INTEGER,"amount","Amount of messages you want deleted",true)
-                                .setRequiredRange(1,100)
+                                    .setRequiredRange(1,100)
                     )
                     .setDefaultPermissions(DefaultMemberPermissions.DISABLED)
                     .queue();
@@ -125,12 +123,15 @@ public class Main
             guild.upsertCommand("slowmode","Sets slowmode in current channel")
                     .addOptions(
                             new OptionData(OptionType.INTEGER,"amount","New slowmode time (seconds)",true)
-                                .setRequiredRange(0,21600)
+                                    .setRequiredRange(0,21600)
                     )
                     .setDefaultPermissions(DefaultMemberPermissions.DISABLED)
                     .queue();
             guild.upsertCommand("unmute","Unmutes user")
-                    .addOption(OptionType.USER,"user","user you want unmuted",true)
+                    .addOptions(
+                            new OptionData(OptionType.USER,"user","user you want unmuted",true)
+                    )
+                    //.addOption(OptionType.USER,"user","user you want unmuted",true)
                     .setDefaultPermissions(DefaultMemberPermissions.DISABLED)
                     .queue();
             guild.upsertCommand("lock","Locks channel").setDefaultPermissions(DefaultMemberPermissions.DISABLED).queue();

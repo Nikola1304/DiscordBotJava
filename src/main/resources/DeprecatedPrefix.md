@@ -414,3 +414,27 @@
                     }
                 } else System.out.println(author.getName() + " pokusava da koristi ovu komandu");
             }
+
+
+
+
+
+
+
+// ban kick funkcija za reason
+
+private String bankickjezivafunkcija(String[] niz_reci) {
+
+        // bukvalno me ne osudjujte zbog ovoga
+        String reasonBan = "bug";
+        if(niz_reci.length == 2) reasonBan = "No reason provided. " + DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss").format(LocalDateTime.now());
+        else if (niz_reci.length > 2) {
+            reasonBan = niz_reci[2];
+            if (niz_reci.length > 3) {
+                for (int i = 3; i < niz_reci.length; i++) {
+                    reasonBan = reasonBan + " " + niz_reci[i];
+                }
+            }
+        }
+        return reasonBan;
+    }

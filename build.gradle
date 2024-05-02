@@ -1,0 +1,39 @@
+plugins {
+    id 'java'
+}
+
+group = 'net.cowtopia.dscjava'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    // configuration that holds jars to include in the jar
+    extraLibs
+    //allDependencies
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    implementation 'net.dv8tion:JDA:5.0.0-beta.21'
+
+    extraLibs group: "net.dv8tion", name: "JDA", version: "5.0.0-beta.21"
+    configurations.implementation.extendsFrom(configurations.extraLibs)
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+    from {
+        configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    manifest {
+        attributes["Main-Class"] = "net.cowtopia.dscjava.Main"
+    }
+}

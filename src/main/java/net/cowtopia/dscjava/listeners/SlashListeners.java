@@ -6,8 +6,10 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -28,18 +30,26 @@ import java.util.concurrent.TimeUnit;
 
 public class SlashListeners extends ListenerAdapter
 {
+    /*
+    @Override
+    public void onGenericCommandInteraction(GenericCommandInteractionEvent event)
+    {
+        super.onGenericCommandInteraction(event);
+    }*/
+
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
 
         Guild guild = event.getGuild();
         String name = event.getName();
         MessageChannel channel = event.getChannel();
+        GuildChannel guildChannel = event.getGuildChannel();
 
         User author = event.getMember().getUser();
         String mentionUser = author.getAsMention();
 
         Member authorMember = event.getMember();
-        TextChannel textChannel = guild.getTextChannelById(channel.getId());
+        TextChannel textChannel = event.getChannel().asTextChannel();
 
         Role everyoneRole = guild.getPublicRole();
 
@@ -305,12 +315,15 @@ public class SlashListeners extends ListenerAdapter
             event.reply(mentionUser + " set the slowmode to " + amount + " seconds").queue();
         }
         else if(name.equals("unmute")) {
-            OptionMapping unmuteUsr = event.getOption("user");
-            Member unmuteUser = unmuteUsr.getAsMember();
+            //OptionMapping unmuteUsr = event.getOption("user");
+            //Member unmuteUser = unmuteUsr.getAsMember();
+            Member unmuteUser = event.getOption("user").getAsMember();
 
             try {
                 guild.removeTimeout(unmuteUser).queue();
+                //event.deferReply().queue();
                 event.reply(unmuteUser.getUser().getName() + " has been unmuted").queue();
+                //event.getHook().sendMessage(unmuteUser.getUser().getName() + " has been unmuted").setEphemeral(true).queue();
             }
             catch (HierarchyException e) {
                 event.reply(hierarchyExMsg).queue();

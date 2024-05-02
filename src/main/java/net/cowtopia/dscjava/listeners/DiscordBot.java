@@ -104,6 +104,7 @@ public class DiscordBot extends ListenerAdapter
             return;
         }
 
+        /*
         String[] BAD_WORDS = {"weener", "poop", "frick", "darn", "ios"};
 
         for(String badWord : BAD_WORDS) {
@@ -124,8 +125,9 @@ public class DiscordBot extends ListenerAdapter
 
                     staffChannel.sendMessage(reportMessage.build()).queue();
                 }
+                return;
             }
-        }
+        }*/
 
         if (content.startsWith("!say")) {
             // moj ID, jer drugi nisu dostojni ove komande
