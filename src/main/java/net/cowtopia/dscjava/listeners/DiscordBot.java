@@ -131,7 +131,7 @@ public class DiscordBot extends ListenerAdapter
 
         if (content.startsWith("!say")) {
             // moj ID, jer drugi nisu dostojni ove komande
-            if(author.getId().equals("716962243400564786")) {
+            if(author.getId().equals("716962243400564786")) { // hard coded value bruh
                 try {
                     channel.sendMessage(content.substring(5)).queue();
                     message.delete().queue();

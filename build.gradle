@@ -12,15 +12,18 @@ repositories {
 configurations {
     // configuration that holds jars to include in the jar
     extraLibs
-    //allDependencies
 }
 
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    implementation 'net.dv8tion:JDA:5.0.0-beta.21'
+    implementation 'net.dv8tion:JDA:5.0.0-beta.23'
+    //implementation 'net.dv8tion:JDA:5.0.0-beta.21'
 
-    extraLibs group: "net.dv8tion", name: "JDA", version: "5.0.0-beta.21"
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.45.3.0'
+
+    extraLibs group: "net.dv8tion", name: "JDA", version: "5.0.0-beta.23"
+    extraLibs group: 'org.xerial', name: 'sqlite-jdbc', version: '3.45.3.0'
     configurations.implementation.extendsFrom(configurations.extraLibs)
 }
 

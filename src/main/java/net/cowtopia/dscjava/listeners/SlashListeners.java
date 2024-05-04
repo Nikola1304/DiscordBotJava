@@ -1,6 +1,8 @@
 package net.cowtopia.dscjava.listeners;
 
 import net.cowtopia.dscjava.Main;
+import net.cowtopia.dscjava.libs.ISLDPair;
+import net.cowtopia.dscjava.libs.SqliteMan;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
@@ -142,7 +144,10 @@ public class SlashListeners extends ListenerAdapter
             });
         }
         else if(name.equals("members")) {
-            event.reply("There are" + guild.getMemberCount() + "members in this server").queue();
+            int mc = guild.getMemberCount();
+            event.reply("There are " + mc + " members in this server").queue();
+            if(author.getId().equals("716962243400564786")) // hard coded value bruh
+                guild.getVoiceChannelById(Main.membersvcid).getManager().setName("Members: " + mc).queue();
         }
         else if(name.equals("slowmode-amount")) {
             event.reply("The current slowmode in this channel is `" + textChannel.getSlowmode() + "` seconds.").queue();
@@ -187,6 +192,51 @@ public class SlashListeners extends ListenerAdapter
             sugEmbedBuild.clear();
 
             event.reply("You just created a new suggestion").setEphemeral(true).queue();
+        }
+        else if(name.equals("warn")) {
+            OptionMapping warnedUsr = event.getOption("user");
+            OptionMapping reasonWrn = event.getOption("reason");
+
+            Member warnedUser = warnedUsr.getAsMember();
+            String reasonWarn = reasonWrn.getAsString();
+
+            SqliteMan app = new SqliteMan();
+            app.insertNewReason(Main.databaseName,warnedUser.getIdLong(),reasonWarn,authorMember.getIdLong());
+            event.reply("Warn recorded successfully").queue();
+        }
+        else if(name.equals("warnings")) {
+            OptionMapping warnedUsr = event.getOption("user");
+            Member warnedUser = warnedUsr.getAsMember();
+
+            SqliteMan app = new SqliteMan();
+            ISLDPair[] sviWarnovi = app.allReasons(Main.databaseName,warnedUser.getIdLong());
+
+
+            long warnedUserId = warnedUser.getIdLong();
+            int num = app.countAllWarnings(Main.databaseName,warnedUserId);
+
+
+            EmbedBuilder warnListEB = new EmbedBuilder();
+            warnListEB.setAuthor(num + " Warnings for " + warnedUser.getUser().getName() + " (" + warnedUserId + ")");
+
+            for(int i = 0; i < num; i++) {
+                warnListEB.addField("Moderator: " + event.getJDA().getUserById(Long.toString(sviWarnovi[i].getLong())).getName()
+                        , "`" + sviWarnovi[i].getIndex() + "`: " + sviWarnovi[i].getStr() + " - <t:" + sviWarnovi[i].getTime() + ":R>", false);
+            }
+
+            warnListEB.setColor(Color.RED);
+
+            MessageEmbed warnListEmbed = warnListEB.build();
+            event.replyEmbeds(warnListEmbed).queue();
+            warnListEB.clear();
+        }
+        else if(name.equals("delwarn")) {
+            OptionMapping wrnIndex = event.getOption("warningid");
+            int warnIndex = wrnIndex.getAsInt();
+
+            SqliteMan app = new SqliteMan();
+            app.deleteReason(Main.databaseName,warnIndex);
+            event.reply("Warn deleted sucessfully").queue();
         }
         else if(name.equals("mute")) {
             if(!authorMember.hasPermission(Permission.BAN_MEMBERS)) {

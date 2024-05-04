@@ -1,5 +1,6 @@
 package net.cowtopia.dscjava;
 
+import net.cowtopia.dscjava.libs.*;
 import net.cowtopia.dscjava.listeners.ButtonListeners;
 import net.cowtopia.dscjava.listeners.DiscordBot;
 import net.cowtopia.dscjava.listeners.SlashListeners;
@@ -13,9 +14,8 @@ import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-
 import javax.security.auth.login.LoginException;
-
+import java.io.File;
 import static net.dv8tion.jda.api.utils.MemberCachePolicy.ALL;
 
 public class Main
@@ -27,10 +27,19 @@ public class Main
     public static final long staffchid = 1220415121730306048L;
     public static final long suggestchid = 1213992313332699166L;
     public static final long ticketsCat = 1219763274141405214L;
+    public static final long serverId = 817404696687673454L;
+    public static String databaseName = "botbase.db";
 
 
     public static void main(String[] args) throws LoginException, InterruptedException
     {
+        File f = new File(databaseName);
+        if(!f.isFile()) {
+            SqliteMan.createNewDatabase(databaseName);
+            SqliteMan.connect(databaseName);
+            SqliteMan.createWarningsTable(databaseName);
+        }
+
         JDA bot = JDABuilder.createDefault(BOT_TOKEN_INSERT_HERE)
                 .setActivity(Activity.watching("you. Ping me for help!"))
                 .addEventListeners(new DiscordBot(), new ButtonListeners(), new SlashListeners(), new WelcomeLeaveListeners())
@@ -47,7 +56,7 @@ public class Main
         // ali njima se necu igrati
         // Guild Commands - can only be used in a specific guild (I need this)
 
-        Guild guild = bot.getGuildById(817404696687673454L);
+        Guild guild = bot.getGuildById(serverId);
 
         // ignorisati ovo, test
         Command.Choice choiceSeconds = new Command.Choice("Seconds", 1);
@@ -89,6 +98,24 @@ public class Main
                     .queue();
             guild.upsertCommand("suggest","Posts a suggestion so people can vote on it")
                     .addOption(OptionType.STRING,"content","Thing youre suggesting",true)
+                    .queue();
+            guild.upsertCommand("warn","Warns a user")
+                    .addOptions(
+                            new OptionData(OptionType.USER,"user","user you want warned",true),
+                            new OptionData(OptionType.STRING,"reason","reason you warned that user",true)
+                    )
+                    .setDefaultPermissions(DefaultMemberPermissions.DISABLED)
+                    .queue();
+            guild.upsertCommand("warnings","Lists all warnings user has")
+                    .addOption(OptionType.USER,"user","user you want warnings shown",true)
+                    .setDefaultPermissions(DefaultMemberPermissions.DISABLED)
+                    .queue();
+            guild.upsertCommand("delwarn","Delets warning")
+                    .addOptions(
+                            new OptionData(OptionType.INTEGER,"warningid", "ID of warning you want removed",true)
+                                .setRequiredRange(1,999999999)
+                    )
+                    .setDefaultPermissions(DefaultMemberPermissions.DISABLED)
                     .queue();
             guild.upsertCommand("mute","Mutes user")
                     .addOptions(
