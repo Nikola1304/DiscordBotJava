@@ -21,9 +21,11 @@ dependencies {
     //implementation 'net.dv8tion:JDA:5.0.0-beta.21'
 
     implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.45.3.0'
+    implementation 'com.github.lalyos:jfiglet:0.0.9'
 
     extraLibs group: "net.dv8tion", name: "JDA", version: "5.0.0-beta.23"
     extraLibs group: 'org.xerial', name: 'sqlite-jdbc', version: '3.45.3.0'
+    extraLibs group: 'com.github.lalyos', name: 'jfiglet', version: '0.0.9'
     configurations.implementation.extendsFrom(configurations.extraLibs)
 }
 

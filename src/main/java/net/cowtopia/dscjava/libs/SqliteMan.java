@@ -137,8 +137,21 @@ public class SqliteMan
         }
     }
 
+    // merge ova dva kasnije (mrzi me sad)
     public void deleteReason(String fileName, int indeks) {
         String sql = "DELETE FROM warnings WHERE id='" + indeks + "'";
+
+        try (Connection conn = this.connection(fileName);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void deleteMultipleReasons(String fileName, String userOrMod, long inputid) {
+        String sql = "DELETE FROM warnings WHERE " + userOrMod + "='" + inputid + "'";
 
         try (Connection conn = this.connection(fileName);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {

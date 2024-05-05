@@ -1,5 +1,6 @@
 package net.cowtopia.dscjava.listeners;
 
+import com.github.lalyos.jfiglet.FigletFont;
 import net.cowtopia.dscjava.Main;
 import net.cowtopia.dscjava.libs.ISLDPair;
 import net.cowtopia.dscjava.libs.SqliteMan;
@@ -24,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 import java.awt.*;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
@@ -152,6 +154,20 @@ public class SlashListeners extends ListenerAdapter
         else if(name.equals("slowmode-amount")) {
             event.reply("The current slowmode in this channel is `" + textChannel.getSlowmode() + "` seconds.").queue();
         }
+        else if(name.equals("figlet")) {
+            String txt = (event.getOption("text")).getAsString();
+            try
+            {
+                String asciiArt = FigletFont.convertOneLine(txt);
+                event.reply("```"+asciiArt+"```").queue();
+            } catch (IOException e)
+            {
+                event.reply("IOException, idk what that is").queue();
+                //throw new RuntimeException(e);
+            } catch (IllegalArgumentException e) {
+                event.reply("Im sorry, I cant do that").queue();
+            }
+        }
         else if(name.equals("avatar")) {
             OptionMapping avatarOption = event.getOption("user");
             Member avatarMember = authorMember;
@@ -195,10 +211,16 @@ public class SlashListeners extends ListenerAdapter
         }
         else if(name.equals("warn")) {
             OptionMapping warnedUsr = event.getOption("user");
-            OptionMapping reasonWrn = event.getOption("reason");
-
             Member warnedUser = warnedUsr.getAsMember();
-            String reasonWarn = reasonWrn.getAsString();
+
+            String reasonWarn;
+            try {
+                OptionMapping reasonWrn = event.getOption("reason");
+                reasonWarn = reasonWrn.getAsString();
+            }
+            catch (NullPointerException e) {
+                reasonWarn = "No reason provided";
+            }
 
             SqliteMan app = new SqliteMan();
             app.insertNewReason(Main.databaseName,warnedUser.getIdLong(),reasonWarn,authorMember.getIdLong());
@@ -237,6 +259,27 @@ public class SlashListeners extends ListenerAdapter
             SqliteMan app = new SqliteMan();
             app.deleteReason(Main.databaseName,warnIndex);
             event.reply("Warn deleted sucessfully").queue();
+        }
+        else if(name.equals("delwarnings")) {
+            OptionMapping usrmod = event.getOption("usermod");
+            OptionMapping usr = event.getOption("user");
+
+            int usermod = usrmod.getAsInt();
+            long userid = usr.getAsMember().getIdLong();
+
+            SqliteMan app = new SqliteMan();
+
+            if(usermod == 5) { // user
+                app.deleteMultipleReasons(Main.databaseName,"user_id",userid);
+                event.reply("Warnings deleted successfully").queue();
+            }
+            else if (usermod == 6) { // mod
+                app.deleteMultipleReasons(Main.databaseName,"author_id",userid);
+                event.reply("Warnings deleted successfully").queue();
+            }
+            else {
+                event.reply("Invalid argument").queue();
+            }
         }
         else if(name.equals("mute")) {
             if(!authorMember.hasPermission(Permission.BAN_MEMBERS)) {

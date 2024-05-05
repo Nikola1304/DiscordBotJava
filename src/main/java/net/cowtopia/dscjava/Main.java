@@ -14,8 +14,11 @@ import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+
 import javax.security.auth.login.LoginException;
+
 import java.io.File;
+
 import static net.dv8tion.jda.api.utils.MemberCachePolicy.ALL;
 
 public class Main
@@ -63,6 +66,8 @@ public class Main
         Command.Choice choiceMinutes = new Command.Choice("Minutes", 2);
         Command.Choice choiceHours = new Command.Choice("Hours", 3);
         Command.Choice choiceDays = new Command.Choice("Days", 4);
+        Command.Choice choiceUser = new Command.Choice("User", 5);
+        Command.Choice choiceMod = new Command.Choice("Moderator", 6);
 
 
         if(guild != null) {
@@ -86,6 +91,9 @@ public class Main
             guild.upsertCommand("ping","server ping").queue();
             guild.upsertCommand("members","Shows you amount of members in server").queue();
             guild.upsertCommand("slowmode-amount","Shows you slowmode duration in your current channel").queue();
+            guild.upsertCommand("figlet","Creates ascii art from text")
+                    .addOption(OptionType.STRING,"text","text you want converted to ascii art",true)
+                    .queue();
             guild.upsertCommand("avatar","Presents you with someones avatar")
                     .addOption(OptionType.USER,"user","user you want avatar shown")
                     .queue();
@@ -102,7 +110,7 @@ public class Main
             guild.upsertCommand("warn","Warns a user")
                     .addOptions(
                             new OptionData(OptionType.USER,"user","user you want warned",true),
-                            new OptionData(OptionType.STRING,"reason","reason you warned that user",true)
+                            new OptionData(OptionType.STRING,"reason","reason you warned that user",false)
                     )
                     .setDefaultPermissions(DefaultMemberPermissions.DISABLED)
                     .queue();
@@ -114,6 +122,14 @@ public class Main
                     .addOptions(
                             new OptionData(OptionType.INTEGER,"warningid", "ID of warning you want removed",true)
                                 .setRequiredRange(1,999999999)
+                    )
+                    .setDefaultPermissions(DefaultMemberPermissions.DISABLED)
+                    .queue();
+            guild.upsertCommand("delwarnings","Delets all warnings made by mod or assigned to a certain user")
+                    .addOptions(
+                            new OptionData(OptionType.INTEGER,"usermod","Choose which warnings you want deleted",true)
+                                    .addChoices(choiceUser, choiceMod),
+                            new OptionData(OptionType.USER,"user","user with warns or mod who slapped those warns",true)
                     )
                     .setDefaultPermissions(DefaultMemberPermissions.DISABLED)
                     .queue();
