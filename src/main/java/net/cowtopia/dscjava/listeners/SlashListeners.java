@@ -2,6 +2,7 @@ package net.cowtopia.dscjava.listeners;
 
 import com.github.lalyos.jfiglet.FigletFont;
 import net.cowtopia.dscjava.Main;
+import net.cowtopia.dscjava.libs.HttpUrl;
 import net.cowtopia.dscjava.libs.ISLDPair;
 import net.cowtopia.dscjava.libs.SqliteMan;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -12,7 +13,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -144,6 +144,15 @@ public class SlashListeners extends ListenerAdapter
                 long ping = endTime - startTime;
                 response.editOriginal("Ping: " + ping + "ms").queue();
             });
+        }
+        else if(name.equals("cat")) {
+            //String url = "http://thecatapi.com/api/images/get?format=src&type=png";
+            String url = "https://api.thecatapi.com/api/images/get?format=src&type=png";
+            EmbedBuilder catBuilder = new EmbedBuilder()
+                    .setTitle("Here's a cat!")
+                    .setImage(HttpUrl.whereUrlRedirects(url));
+
+            event.replyEmbeds(catBuilder.build()).queue();
         }
         else if(name.equals("members")) {
             int mc = guild.getMemberCount();

@@ -89,6 +89,7 @@ public class Main
             guild.upsertCommand("multiply","Multiplies two numbers").queue();
             guild.upsertCommand("invite","Sends you permanent server invite link").queue();
             guild.upsertCommand("ping","server ping").queue();
+            guild.upsertCommand("cat","shows you an image of a cat!").queue();
             guild.upsertCommand("members","Shows you amount of members in server").queue();
             guild.upsertCommand("slowmode-amount","Shows you slowmode duration in your current channel").queue();
             guild.upsertCommand("figlet","Creates ascii art from text")
