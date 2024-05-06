@@ -184,7 +184,7 @@ public class DiscordBot extends ListenerAdapter
     }
 
     // potencijalno maknuti deo koda ispod ovog komentara
-    @Override
+    /*@Override
     public void onChannelDelete(@NotNull ChannelDeleteEvent event) {
         String channelName = event.getChannel().getName();
 
@@ -193,7 +193,7 @@ public class DiscordBot extends ListenerAdapter
         if(channel != null) {
             channel.sendMessage("The channel: \"" + channelName + "\" was deleted").queue();
         }
-    }
+    }*/
 
     /*
     @Override

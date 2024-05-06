@@ -1,5 +1,7 @@
 package net.cowtopia.dscjava;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import net.cowtopia.dscjava.libs.*;
 import net.cowtopia.dscjava.listeners.ButtonListeners;
 import net.cowtopia.dscjava.listeners.DiscordBot;
@@ -17,33 +19,53 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 
 import javax.security.auth.login.LoginException;
 
-import java.io.File;
+import java.io.*;
 
 import static net.dv8tion.jda.api.utils.MemberCachePolicy.ALL;
 
 public class Main
 {
-    public static final long welcomechid = 910130241664602144L;
-    public static final long leavechid = welcomechid;
-    public static final long generalchid = 910094414175694879L;
-    public static final long membersvcid = 1211789463475327067L;
-    public static final long staffchid = 1220415121730306048L;
-    public static final long suggestchid = 1213992313332699166L;
-    public static final long ticketsCat = 1219763274141405214L;
-    public static final long serverId = 817404696687673454L;
-    public static String databaseName = "botbase.db";
-
-
-    public static void main(String[] args) throws LoginException, InterruptedException
+    public static String config = "config.json";
+    public static void main(String[] args) throws LoginException, InterruptedException, FileNotFoundException
     {
-        File f = new File(databaseName);
-        if(!f.isFile()) {
-            SqliteMan.createNewDatabase(databaseName);
-            SqliteMan.connect(databaseName);
-            SqliteMan.createWarningsTable(databaseName);
+        // I'm too lazy to write
+        File cj = new File(config);
+        if(!cj.isFile()) {
+            PrintWriter writer = new PrintWriter(config);
+            writer.println("{");
+            writer.println("    \"bot_token\": \"\",");
+            writer.println("    \"server_id\": \"\",");
+            writer.println("    \"db_name\": \"botbase.db\",");
+            writer.println("    \"welcome_ch_id\": \"\",");
+            writer.println("    \"leave_ch_id\": \"\",");
+            writer.println("    \"members_vc_id\": \"\",");
+            writer.println("    \"staff_ch_id\": \"\",");
+            writer.println("    \"suggest_ch_id\": \"\",");
+            writer.println("    \"tickets_cat\": \"\"");
+            writer.println("}");
+            writer.close();
+
+            System.out.println("Please fill out the " + config + " with all required information");
+            return;
         }
 
-        JDA bot = JDABuilder.createDefault(BOT_TOKEN_INSERT_HERE)
+        KlasaGson greader;
+        try {
+            greader = getGsonObject();
+        } catch (JsonSyntaxException e) {
+            System.out.println("Please fill out the " + config + " with all required information");
+            return;
+        }
+        String databaseNam = greader.getDBName();
+
+        File f = new File(databaseNam);
+        if(!f.isFile()) {
+            SqliteMan.createNewDatabase(databaseNam);
+            SqliteMan.connect(databaseNam);
+            SqliteMan.createWarningsTable(databaseNam);
+        }
+
+        JDA bot = JDABuilder.createDefault(greader.getToken())
                 .setActivity(Activity.watching("you. Ping me for help!"))
                 .addEventListeners(new DiscordBot(), new ButtonListeners(), new SlashListeners(), new WelcomeLeaveListeners())
                 // dozvole koje discord trazi da dodam iz nekog razloga (check msg content, check member)
@@ -59,7 +81,7 @@ public class Main
         // ali njima se necu igrati
         // Guild Commands - can only be used in a specific guild (I need this)
 
-        Guild guild = bot.getGuildById(serverId);
+        Guild guild = bot.getGuildById(greader.getServerId());
 
         // ignorisati ovo, test
         Command.Choice choiceSeconds = new Command.Choice("Seconds", 1);
@@ -197,5 +219,18 @@ public class Main
 
         // ovaj line cini bota 10000x brzim
         System.out.println("Hello world!");
+    }
+
+    public static KlasaGson getGsonObject()
+    {
+        try {
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(config));
+            Gson gson = new Gson();
+            KlasaGson greader = gson.fromJson(bufferedReader, KlasaGson.class);
+            return greader;
+        } catch (FileNotFoundException e) {
+            KlasaGson greader = new KlasaGson("1",1L,"1",1L,1L,1L,1L,1L,1L);
+            return greader;
+        }
     }
 }

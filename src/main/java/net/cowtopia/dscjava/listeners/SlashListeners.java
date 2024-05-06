@@ -4,6 +4,7 @@ import com.github.lalyos.jfiglet.FigletFont;
 import net.cowtopia.dscjava.Main;
 import net.cowtopia.dscjava.libs.HttpUrl;
 import net.cowtopia.dscjava.libs.ISLDPair;
+import net.cowtopia.dscjava.libs.KlasaGson;
 import net.cowtopia.dscjava.libs.SqliteMan;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -25,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 import java.awt.*;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -157,8 +159,10 @@ public class SlashListeners extends ListenerAdapter
         else if(name.equals("members")) {
             int mc = guild.getMemberCount();
             event.reply("There are " + mc + " members in this server").queue();
-            if(author.getId().equals("716962243400564786")) // hard coded value bruh
-                guild.getVoiceChannelById(Main.membersvcid).getManager().setName("Members: " + mc).queue();
+            if(author.getId().equals("716962243400564786")) { // hard coded value bruh
+                KlasaGson greader = Main.getGsonObject();
+                guild.getVoiceChannelById(greader.getMembersId()).getManager().setName("Members: " + mc).queue();
+            }
         }
         else if(name.equals("slowmode-amount")) {
             event.reply("The current slowmode in this channel is `" + textChannel.getSlowmode() + "` seconds.").queue();
@@ -202,6 +206,8 @@ public class SlashListeners extends ListenerAdapter
         else if(name.equals("suggest")) {
             String content = (event.getOption("content")).getAsString();
 
+            KlasaGson greader = Main.getGsonObject();
+
             // https://charbase.com/1f44d-unicode-thumbs-up-sign
             EmbedBuilder sugEmbedBuild = new EmbedBuilder();
             sugEmbedBuild.setTitle(author.getName() + " suggests");
@@ -210,7 +216,7 @@ public class SlashListeners extends ListenerAdapter
             sugEmbedBuild.setFooter(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").format(LocalDateTime.now()),authorMember.getUser().getAvatarUrl());
             MessageEmbed sugEmbed = sugEmbedBuild.build();
 
-            guild.getTextChannelById(Main.suggestchid).sendMessageEmbeds(sugEmbed).queue(suggestmsg -> {
+            guild.getTextChannelById(greader.getSuggestId()).sendMessageEmbeds(sugEmbed).queue(suggestmsg -> {
                 suggestmsg.addReaction(Emoji.fromUnicode("\u2705")).queue();
                 suggestmsg.addReaction(Emoji.fromUnicode("\u274c")).queue();
             });
@@ -219,6 +225,7 @@ public class SlashListeners extends ListenerAdapter
             event.reply("You just created a new suggestion").setEphemeral(true).queue();
         }
         else if(name.equals("warn")) {
+            KlasaGson greader = Main.getGsonObject();
             OptionMapping warnedUsr = event.getOption("user");
             Member warnedUser = warnedUsr.getAsMember();
 
@@ -232,19 +239,20 @@ public class SlashListeners extends ListenerAdapter
             }
 
             SqliteMan app = new SqliteMan();
-            app.insertNewReason(Main.databaseName,warnedUser.getIdLong(),reasonWarn,authorMember.getIdLong());
+            app.insertNewReason(greader.getDBName(),warnedUser.getIdLong(),reasonWarn,authorMember.getIdLong());
             event.reply("Warn recorded successfully").queue();
         }
         else if(name.equals("warnings")) {
+            KlasaGson greader = Main.getGsonObject();
             OptionMapping warnedUsr = event.getOption("user");
             Member warnedUser = warnedUsr.getAsMember();
 
             SqliteMan app = new SqliteMan();
-            ISLDPair[] sviWarnovi = app.allReasons(Main.databaseName,warnedUser.getIdLong());
+            ISLDPair[] sviWarnovi = app.allReasons(greader.getDBName(),warnedUser.getIdLong());
 
 
             long warnedUserId = warnedUser.getIdLong();
-            int num = app.countAllWarnings(Main.databaseName,warnedUserId);
+            int num = app.countAllWarnings(greader.getDBName(),warnedUserId);
 
 
             EmbedBuilder warnListEB = new EmbedBuilder();
@@ -262,16 +270,19 @@ public class SlashListeners extends ListenerAdapter
             warnListEB.clear();
         }
         else if(name.equals("delwarn")) {
+            KlasaGson greader = Main.getGsonObject();
             OptionMapping wrnIndex = event.getOption("warningid");
             int warnIndex = wrnIndex.getAsInt();
 
             SqliteMan app = new SqliteMan();
-            app.deleteReason(Main.databaseName,warnIndex);
+            app.deleteReason(greader.getDBName(),warnIndex);
             event.reply("Warn deleted sucessfully").queue();
         }
         else if(name.equals("delwarnings")) {
             OptionMapping usrmod = event.getOption("usermod");
             OptionMapping usr = event.getOption("user");
+
+            KlasaGson greader = Main.getGsonObject();
 
             int usermod = usrmod.getAsInt();
             long userid = usr.getAsMember().getIdLong();
@@ -279,11 +290,11 @@ public class SlashListeners extends ListenerAdapter
             SqliteMan app = new SqliteMan();
 
             if(usermod == 5) { // user
-                app.deleteMultipleReasons(Main.databaseName,"user_id",userid);
+                app.deleteMultipleReasons(greader.getDBName(),"user_id",userid);
                 event.reply("Warnings deleted successfully").queue();
             }
             else if (usermod == 6) { // mod
-                app.deleteMultipleReasons(Main.databaseName,"author_id",userid);
+                app.deleteMultipleReasons(greader.getDBName(),"author_id",userid);
                 event.reply("Warnings deleted successfully").queue();
             }
             else {
@@ -380,7 +391,9 @@ public class SlashListeners extends ListenerAdapter
             OptionMapping argumnt = event.getOption("argument");
             String argument = argumnt.getAsString();
 
-            Category ticketsCategory = event.getGuild().getCategoryById(Main.ticketsCat);
+            KlasaGson greader = Main.getGsonObject();
+
+            Category ticketsCategory = event.getGuild().getCategoryById(greader.getTicketsCat());
 
             if(channel.getName().startsWith(chStart)) {
                 if(authorMember.hasPermission(Permission.MANAGE_CHANNEL)) {

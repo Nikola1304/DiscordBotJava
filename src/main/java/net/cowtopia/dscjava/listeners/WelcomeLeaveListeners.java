@@ -1,6 +1,7 @@
 package net.cowtopia.dscjava.listeners;
 
 import net.cowtopia.dscjava.Main;
+import net.cowtopia.dscjava.libs.KlasaGson;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
@@ -13,7 +14,8 @@ public class WelcomeLeaveListeners extends ListenerAdapter
     public void onGuildMemberJoin(GuildMemberJoinEvent event)
     {
         Guild guild = event.getGuild();
-        TextChannel welcomechannel = guild.getTextChannelById(Main.welcomechid);
+        KlasaGson greader = Main.getGsonObject();
+        TextChannel welcomechannel = guild.getTextChannelById(greader.getWelcomeId());
 
         // naravno sve ovo treba poboljsati ali baza je tu
         // dodati lepu porukicu, updatovanje channela sa member listama, potencijalno davanje nekih rolova
@@ -33,7 +35,8 @@ public class WelcomeLeaveListeners extends ListenerAdapter
     @Override
     public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
         Guild guild = event.getGuild();
-        TextChannel leavechannel = guild.getTextChannelById(Main.leavechid);
+        KlasaGson greader = Main.getGsonObject();
+        TextChannel leavechannel = guild.getTextChannelById(greader.getLeaveId());
         // bruhh sta je ovo
         //List<TextChannel> leavechlist = guild.getTextChannelsByName("welcome",true);
 
