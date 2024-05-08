@@ -1,7 +1,5 @@
 package net.cowtopia.dscjava;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import net.cowtopia.dscjava.libs.*;
 import net.cowtopia.dscjava.listeners.ButtonListeners;
 import net.cowtopia.dscjava.listeners.DiscordBot;
@@ -11,6 +9,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -25,17 +24,23 @@ import static net.dv8tion.jda.api.utils.MemberCachePolicy.ALL;
 
 public class Main
 {
-    public static String config = "config.json";
+    // this is hardcoded because I don't care about preferences
+    private static final String config = "config.json";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final GSonConfig greader = GSonConfig.getGsonObject(config);
+
     public static void main(String[] args) throws LoginException, InterruptedException, FileNotFoundException
     {
-        // I'm too lazy to write
+        // I'm too lazy to write something smarter
         File cj = new File(config);
         if(!cj.isFile()) {
             PrintWriter writer = new PrintWriter(config);
             writer.println("{");
             writer.println("    \"bot_token\": \"\",");
             writer.println("    \"server_id\": \"\",");
-            writer.println("    \"db_name\": \"botbase.db\",");
+            writer.println("    \"db_name\": \"botbase\",");
             writer.println("    \"welcome_ch_id\": \"\",");
             writer.println("    \"leave_ch_id\": \"\",");
             writer.println("    \"members_vc_id\": \"\",");
@@ -45,34 +50,39 @@ public class Main
             writer.println("}");
             writer.close();
 
-            System.out.println("Please fill out the " + config + " with all required information");
+            System.out.println(ANSI_GREEN + "Please fill out the " + config + " with all required information" + ANSI_RESET);
             return;
         }
 
-        KlasaGson greader;
-        try {
-            greader = getGsonObject();
-        } catch (JsonSyntaxException e) {
-            System.out.println("Please fill out the " + config + " with all required information");
+        if(greader.getDBName().equals("OBJECT_NOT_FOUND.db")) {
+            // possible bug: person named the file this way, but if that's the case I really don't care
+            // maybe I could write this to token but it feels unsafe to read token more times than necessary
+            System.out.println(ANSI_RED + "Please fill out the " + config + " with all required information" + ANSI_RESET);
             return;
         }
-        String databaseNam = greader.getDBName();
 
-        File f = new File(databaseNam);
+        File f = new File(greader.getDBName());
         if(!f.isFile()) {
-            SqliteMan.createNewDatabase(databaseNam);
-            SqliteMan.connect(databaseNam);
-            SqliteMan.createWarningsTable(databaseNam);
+            SqliteMan.createNewDatabase(greader.getDBName());
+            SqliteMan.connect(greader.getDBName());
+            SqliteMan.createWarningsTable(greader.getDBName());
+            System.out.println(ANSI_GREEN + "Database file has been successfully created!" + ANSI_RESET);
         }
 
-        JDA bot = JDABuilder.createDefault(greader.getToken())
-                .setActivity(Activity.watching("you. Ping me for help!"))
-                .addEventListeners(new DiscordBot(), new ButtonListeners(), new SlashListeners(), new WelcomeLeaveListeners())
-                // dozvole koje discord trazi da dodam iz nekog razloga (check msg content, check member)
-                .enableIntents(GatewayIntent.GUILD_MEMBERS,GatewayIntent.GUILD_PRESENCES,GatewayIntent.GUILD_MESSAGES,GatewayIntent.MESSAGE_CONTENT)
-                //.enableCache(CacheFlag.MEMBER_OVERRIDES,CacheFlag.ACTIVITY)
-                .setMemberCachePolicy(ALL)
-                .build().awaitReady();
+        JDA bot; try
+        {
+            bot = JDABuilder.createDefault(greader.getToken())
+                    .setActivity(Activity.watching("you. Ping me for help!"))
+                    .addEventListeners(new DiscordBot(), new ButtonListeners(), new SlashListeners(), new WelcomeLeaveListeners())
+                    // dozvole koje discord trazi da dodam iz nekog razloga (check msg content, check member)
+                    .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
+                    //.enableCache(CacheFlag.MEMBER_OVERRIDES,CacheFlag.ACTIVITY)
+                    .setMemberCachePolicy(ALL)
+                    .build().awaitReady();
+        } catch (InvalidTokenException e) {
+            System.out.println(ANSI_RED + "Invalid token provided!" + ANSI_RESET);
+            return;
+        }
 
 
         // Global and Guild Commands
@@ -218,19 +228,6 @@ public class Main
         command.queue();*/
 
         // ovaj line cini bota 10000x brzim
-        System.out.println("Hello world!");
-    }
-
-    public static KlasaGson getGsonObject()
-    {
-        try {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(config));
-            Gson gson = new Gson();
-            KlasaGson greader = gson.fromJson(bufferedReader, KlasaGson.class);
-            return greader;
-        } catch (FileNotFoundException e) {
-            KlasaGson greader = new KlasaGson("1",1L,"1",1L,1L,1L,1L,1L,1L);
-            return greader;
-        }
+        System.out.println(ANSI_GREEN + "Hello world!" + ANSI_RESET);
     }
 }

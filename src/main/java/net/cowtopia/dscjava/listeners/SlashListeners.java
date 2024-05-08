@@ -4,7 +4,6 @@ import com.github.lalyos.jfiglet.FigletFont;
 import net.cowtopia.dscjava.Main;
 import net.cowtopia.dscjava.libs.HttpUrl;
 import net.cowtopia.dscjava.libs.ISLDPair;
-import net.cowtopia.dscjava.libs.KlasaGson;
 import net.cowtopia.dscjava.libs.SqliteMan;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -26,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 import java.awt.*;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -64,12 +62,12 @@ public class SlashListeners extends ListenerAdapter
         if(name.equals("help")) {
             //event.reply("You just farted").queue();
 
-            event.deferReply().queue();
+            event.deferReply().setEphemeral(true).queue();
             //event.getHook().sendMessage("You just farted").queue();
 
             // samo user vidi ovo
             // bar se nadam
-            event.getHook().sendMessage("Nema tebi pomoci decko").setEphemeral(true).queue();
+            event.getHook().sendMessage("Nema tebi pomoci decko").queue();
         }
         else if(name.equals("food")) {
 
@@ -159,9 +157,8 @@ public class SlashListeners extends ListenerAdapter
         else if(name.equals("members")) {
             int mc = guild.getMemberCount();
             event.reply("There are " + mc + " members in this server").queue();
-            if(author.getId().equals("716962243400564786")) { // hard coded value bruh
-                KlasaGson greader = Main.getGsonObject();
-                guild.getVoiceChannelById(greader.getMembersId()).getManager().setName("Members: " + mc).queue();
+            if(author.getId().equals(guild.getOwner().getUser().getId())) {
+                guild.getVoiceChannelById(Main.greader.getMembersId()).getManager().setName("Members: " + mc).queue();
             }
         }
         else if(name.equals("slowmode-amount")) {
@@ -206,8 +203,6 @@ public class SlashListeners extends ListenerAdapter
         else if(name.equals("suggest")) {
             String content = (event.getOption("content")).getAsString();
 
-            KlasaGson greader = Main.getGsonObject();
-
             // https://charbase.com/1f44d-unicode-thumbs-up-sign
             EmbedBuilder sugEmbedBuild = new EmbedBuilder();
             sugEmbedBuild.setTitle(author.getName() + " suggests");
@@ -216,7 +211,7 @@ public class SlashListeners extends ListenerAdapter
             sugEmbedBuild.setFooter(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").format(LocalDateTime.now()),authorMember.getUser().getAvatarUrl());
             MessageEmbed sugEmbed = sugEmbedBuild.build();
 
-            guild.getTextChannelById(greader.getSuggestId()).sendMessageEmbeds(sugEmbed).queue(suggestmsg -> {
+            guild.getTextChannelById(Main.greader.getSuggestId()).sendMessageEmbeds(sugEmbed).queue(suggestmsg -> {
                 suggestmsg.addReaction(Emoji.fromUnicode("\u2705")).queue();
                 suggestmsg.addReaction(Emoji.fromUnicode("\u274c")).queue();
             });
@@ -225,7 +220,6 @@ public class SlashListeners extends ListenerAdapter
             event.reply("You just created a new suggestion").setEphemeral(true).queue();
         }
         else if(name.equals("warn")) {
-            KlasaGson greader = Main.getGsonObject();
             OptionMapping warnedUsr = event.getOption("user");
             Member warnedUser = warnedUsr.getAsMember();
 
@@ -239,20 +233,19 @@ public class SlashListeners extends ListenerAdapter
             }
 
             SqliteMan app = new SqliteMan();
-            app.insertNewReason(greader.getDBName(),warnedUser.getIdLong(),reasonWarn,authorMember.getIdLong());
+            app.insertNewReason(Main.greader.getDBName(),warnedUser.getIdLong(),reasonWarn,authorMember.getIdLong());
             event.reply("Warn recorded successfully").queue();
         }
         else if(name.equals("warnings")) {
-            KlasaGson greader = Main.getGsonObject();
             OptionMapping warnedUsr = event.getOption("user");
             Member warnedUser = warnedUsr.getAsMember();
 
             SqliteMan app = new SqliteMan();
-            ISLDPair[] sviWarnovi = app.allReasons(greader.getDBName(),warnedUser.getIdLong());
+            ISLDPair[] sviWarnovi = app.allReasons(Main.greader.getDBName(),warnedUser.getIdLong());
 
 
             long warnedUserId = warnedUser.getIdLong();
-            int num = app.countAllWarnings(greader.getDBName(),warnedUserId);
+            int num = app.countAllWarnings(Main.greader.getDBName(),warnedUserId);
 
 
             EmbedBuilder warnListEB = new EmbedBuilder();
@@ -270,19 +263,16 @@ public class SlashListeners extends ListenerAdapter
             warnListEB.clear();
         }
         else if(name.equals("delwarn")) {
-            KlasaGson greader = Main.getGsonObject();
             OptionMapping wrnIndex = event.getOption("warningid");
             int warnIndex = wrnIndex.getAsInt();
 
             SqliteMan app = new SqliteMan();
-            app.deleteReason(greader.getDBName(),warnIndex);
+            app.deleteReason(Main.greader.getDBName(),warnIndex);
             event.reply("Warn deleted sucessfully").queue();
         }
         else if(name.equals("delwarnings")) {
             OptionMapping usrmod = event.getOption("usermod");
             OptionMapping usr = event.getOption("user");
-
-            KlasaGson greader = Main.getGsonObject();
 
             int usermod = usrmod.getAsInt();
             long userid = usr.getAsMember().getIdLong();
@@ -290,11 +280,11 @@ public class SlashListeners extends ListenerAdapter
             SqliteMan app = new SqliteMan();
 
             if(usermod == 5) { // user
-                app.deleteMultipleReasons(greader.getDBName(),"user_id",userid);
+                app.deleteMultipleReasons(Main.greader.getDBName(),"user_id",userid);
                 event.reply("Warnings deleted successfully").queue();
             }
             else if (usermod == 6) { // mod
-                app.deleteMultipleReasons(greader.getDBName(),"author_id",userid);
+                app.deleteMultipleReasons(Main.greader.getDBName(),"author_id",userid);
                 event.reply("Warnings deleted successfully").queue();
             }
             else {
@@ -391,9 +381,7 @@ public class SlashListeners extends ListenerAdapter
             OptionMapping argumnt = event.getOption("argument");
             String argument = argumnt.getAsString();
 
-            KlasaGson greader = Main.getGsonObject();
-
-            Category ticketsCategory = event.getGuild().getCategoryById(greader.getTicketsCat());
+            Category ticketsCategory = event.getGuild().getCategoryById(Main.greader.getTicketsCat());
 
             if(channel.getName().startsWith(chStart)) {
                 if(authorMember.hasPermission(Permission.MANAGE_CHANNEL)) {

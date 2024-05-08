@@ -4,7 +4,6 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
@@ -40,32 +39,19 @@ public class DiscordBot extends ListenerAdapter
         User author = event.getAuthor();
         Guild guild = event.getGuild();
 
-        Member authorMember = event.getMember();
-        String mentionUser = author.getAsMention();
+        // Member authorMember = event.getMember();
+        // String mentionUser = author.getAsMention();
         // lista svih membera koji su mentionovani u poruci sa koje mozemo da skinemo recimo prvog kada radimo ban, kick, mute itd
-        List<Member> mentionedPeople = message.getMentions().getMembers();
+        // List<Member> mentionedPeople = message.getMentions().getMembers();
 
         // ja ne kontam razliku izmedju ovih channela pa sam samo hakovao ovo jer ne znam sta bih drugo
-        TextChannel textChannel = guild.getTextChannelById(channel.getId());
+        // TextChannel textChannel = guild.getTextChannelById(channel.getId());
 
 
         //GuildChannel guildChannel = guild.getGuildChannelById(channel.getId());
-        GuildChannel guildChannel = event.getGuildChannel();
+        // GuildChannel guildChannel = event.getGuildChannel();
 
-        Role everyoneRole = guild.getPublicRole();
-
-
-        if(author.isBot()) return;
-        // this exists to prevent user to acidentally ban this bot
-        if(content.contains(event.getJDA().getSelfUser().getAsMention())) {
-            return;
-        }
-
-        /*
-        channel.sendMessage("author: " + author +
-                "\nmember: " + authorMember + "" +
-                "\nmember1: " + guild.getMemberById(author.getId())).queue();
-         */
+        // Role everyoneRole = guild.getPublicRole();
 
 
         // problem: attachment moze da bude nesto drugo osim slike (zip, pdf, bla bla bla)
@@ -100,6 +86,12 @@ public class DiscordBot extends ListenerAdapter
             return;
         }
 
+        if(author.isBot()) return;
+        // this exists to prevent user to acidentally ban this bot
+        if(content.contains(event.getJDA().getSelfUser().getAsMention())) {
+            return;
+        }
+
         /*
         String[] BAD_WORDS = {"weener", "poop", "frick", "darn", "ios"};
 
@@ -127,7 +119,7 @@ public class DiscordBot extends ListenerAdapter
 
         if (content.startsWith("!say")) {
             // moj ID, jer drugi nisu dostojni ove komande
-            if(author.getId().equals("716962243400564786")) { // hard coded value bruh
+            if(author.getId().equals(guild.getOwner().getUser().getId())) {
                 try {
                     channel.sendMessage(content.substring(5)).queue();
                     message.delete().queue();
