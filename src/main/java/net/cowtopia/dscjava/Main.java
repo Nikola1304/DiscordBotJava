@@ -9,17 +9,15 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-
 import javax.security.auth.login.LoginException;
-
 import java.io.*;
-
 import static net.dv8tion.jda.api.utils.MemberCachePolicy.ALL;
 
 public class Main
@@ -30,6 +28,7 @@ public class Main
     public static final String ANSI_GREEN = "\u001B[32m";
     public static final String ANSI_RESET = "\u001B[0m";
     public static final GSonConfig greader = GSonConfig.getGsonObject(config);
+    public static MessageEmbed rulesEmbedBuilder;
 
     public static void main(String[] args) throws LoginException, InterruptedException, FileNotFoundException
     {
@@ -54,6 +53,21 @@ public class Main
             return;
         }
 
+        File rulesTxt = new File("rules.txt");
+        if(!rulesTxt.isFile()) {
+            PrintWriter writer = new PrintWriter("rules.txt");
+            writer.println("Add rules to rules.txt and restart bot");
+            writer.close();
+        }
+
+        try {
+            rulesEmbedBuilder = Manifacturer.buildRulesEmbed("rules.txt");
+        } catch (IOException e) {
+            System.out.println("Neki exception kad kreiras rules embed, ne znam kako do njega dolazi");
+            return;
+        }
+
+
         if(greader.getDBName().equals("OBJECT_NOT_FOUND.db")) {
             // possible bug: person named the file this way, but if that's the case I really don't care
             // maybe I could write this to token but it feels unsafe to read token more times than necessary
@@ -68,6 +82,9 @@ public class Main
             SqliteMan.createWarningsTable(greader.getDBName());
             System.out.println(ANSI_GREEN + "Database file has been successfully created!" + ANSI_RESET);
         }
+
+        // RSSFetchThread objekat = new RSSFetchThread();
+        // objekat.start();
 
         JDA bot; try
         {
@@ -104,6 +121,7 @@ public class Main
 
         if(guild != null) {
             guild.upsertCommand("help","Helps you (in a way)").queue();
+            guild.upsertCommand("rules","Displays server rules").queue();
             guild.upsertCommand("food","Otkriva ti tajne univerzuma")
                     .addOption(OptionType.STRING, "foodname", "ime tvoje omiljene hrane",true)
                     .queue();

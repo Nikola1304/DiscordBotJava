@@ -23,7 +23,6 @@ import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 import org.jetbrains.annotations.NotNull;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
-
 import java.awt.*;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -68,6 +67,9 @@ public class SlashListeners extends ListenerAdapter
             // samo user vidi ovo
             // bar se nadam
             event.getHook().sendMessage("Nema tebi pomoci decko").queue();
+        }
+        else if(name.equals("rules")) {
+            event.replyEmbeds(Main.rulesEmbedBuilder).queue();
         }
         else if(name.equals("food")) {
 
