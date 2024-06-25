@@ -4,6 +4,7 @@ import com.github.lalyos.jfiglet.FigletFont;
 import net.cowtopia.dscjava.Main;
 import net.cowtopia.dscjava.libs.HttpUrl;
 import net.cowtopia.dscjava.libs.ISLDPair;
+import net.cowtopia.dscjava.libs.MuteDuration;
 import net.cowtopia.dscjava.libs.SqliteMan;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -60,12 +61,10 @@ public class SlashListeners extends ListenerAdapter
 
         if(name.equals("help")) {
             //event.reply("You just farted").queue();
-
             event.deferReply().setEphemeral(true).queue();
             //event.getHook().sendMessage("You just farted").queue();
 
             // samo user vidi ovo
-            // bar se nadam
             event.getHook().sendMessage("Nema tebi pomoci decko").queue();
         }
         else if(name.equals("rules")) {
@@ -245,10 +244,8 @@ public class SlashListeners extends ListenerAdapter
             SqliteMan app = new SqliteMan();
             ISLDPair[] sviWarnovi = app.allReasons(Main.greader.getDBName(),warnedUser.getIdLong());
 
-
             long warnedUserId = warnedUser.getIdLong();
             int num = app.countAllWarnings(Main.greader.getDBName(),warnedUserId);
-
 
             EmbedBuilder warnListEB = new EmbedBuilder();
             warnListEB.setAuthor(num + " Warnings for " + warnedUser.getUser().getName() + " (" + warnedUserId + ")");
@@ -312,24 +309,10 @@ public class SlashListeners extends ListenerAdapter
                 reason = reasonMute.getAsString();
             }*/
 
-            TimeUnit vremenskaJedinica = TimeUnit.MINUTES;
+            MuteDuration muteDuration = new MuteDuration(duzinaMuta, jedinicaMuta);
 
-            if (jedinicaMuta == 1) {
-                vremenskaJedinica = TimeUnit.SECONDS;
-                if (duzinaMuta > 10800) duzinaMuta = 10800;
-            }
-            else if (jedinicaMuta == 3) {
-                vremenskaJedinica = TimeUnit.HOURS;
-                if (duzinaMuta > 169) duzinaMuta = 169;
-            } else if (jedinicaMuta == 4) {
-                vremenskaJedinica = TimeUnit.DAYS;
-                if (duzinaMuta > 28) duzinaMuta = 28;
-            } else {
-                vremenskaJedinica = TimeUnit.MINUTES;
-                if (duzinaMuta > 1400) duzinaMuta = 1400;
-            }
             try {
-                guild.timeoutFor(muteUser, duzinaMuta, vremenskaJedinica).queue();
+                guild.timeoutFor(muteUser, muteDuration.getDuration(), muteDuration.getDurationUnit()).queue();
                 event.reply(muteUser.getUser().getName() + " has been muted").queue();
             }
             catch (HierarchyException e) {

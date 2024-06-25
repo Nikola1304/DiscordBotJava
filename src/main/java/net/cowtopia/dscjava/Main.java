@@ -24,6 +24,7 @@ public class Main
 {
     // this is hardcoded because I don't care about preferences
     private static final String config = "config.json";
+    private static final String ruleFile = "rules.txt";
     public static final String ANSI_RED = "\u001B[31m";
     public static final String ANSI_GREEN = "\u001B[32m";
     public static final String ANSI_RESET = "\u001B[0m";
@@ -53,15 +54,15 @@ public class Main
             return;
         }
 
-        File rulesTxt = new File("rules.txt");
+        File rulesTxt = new File(ruleFile);
         if(!rulesTxt.isFile()) {
-            PrintWriter writer = new PrintWriter("rules.txt");
-            writer.println("Add rules to rules.txt and restart bot");
+            PrintWriter writer = new PrintWriter(ruleFile);
+            writer.println("Add rules to " + ruleFile + " and restart bot");
             writer.close();
         }
 
         try {
-            rulesEmbedBuilder = Manifacturer.buildRulesEmbed("rules.txt");
+            rulesEmbedBuilder = Manifacturer.buildRulesEmbed(ruleFile);
         } catch (IOException e) {
             System.out.println("Neki exception kad kreiras rules embed, ne znam kako do njega dolazi");
             return;
@@ -89,13 +90,13 @@ public class Main
         JDA bot; try
         {
             bot = JDABuilder.createDefault(greader.getToken())
-                    .setActivity(Activity.watching("you. Ping me for help!"))
-                    .addEventListeners(new DiscordBot(), new ButtonListeners(), new SlashListeners(), new WelcomeLeaveListeners())
-                    // dozvole koje discord trazi da dodam iz nekog razloga (check msg content, check member)
-                    .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
-                    //.enableCache(CacheFlag.MEMBER_OVERRIDES,CacheFlag.ACTIVITY)
-                    .setMemberCachePolicy(ALL)
-                    .build().awaitReady();
+                .setActivity(Activity.watching("you. Ping me for help!"))
+                .addEventListeners(new DiscordBot(), new ButtonListeners(), new SlashListeners(), new WelcomeLeaveListeners())
+                // dozvole koje discord trazi da dodam iz nekog razloga (check msg content, check member)
+                .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
+                //.enableCache(CacheFlag.MEMBER_OVERRIDES,CacheFlag.ACTIVITY)
+                .setMemberCachePolicy(ALL)
+                .build().awaitReady();
         } catch (InvalidTokenException e) {
             System.out.println(ANSI_RED + "Invalid token provided!" + ANSI_RESET);
             return;
@@ -172,7 +173,7 @@ public class Main
             guild.upsertCommand("delwarn","Delets warning")
                     .addOptions(
                             new OptionData(OptionType.INTEGER,"warningid", "ID of warning you want removed",true)
-                                .setRequiredRange(1,999999999)
+                                    .setRequiredRange(1,999999999)
                     )
                     .setDefaultPermissions(DefaultMemberPermissions.DISABLED)
                     .queue();
@@ -235,6 +236,7 @@ public class Main
             guild.upsertCommand("license","Shows you code license (maybe useful)").queue();
 
         }
+
 
         // ovo ne radi
         /*CommandListUpdateAction commands = bot.updateCommands();
