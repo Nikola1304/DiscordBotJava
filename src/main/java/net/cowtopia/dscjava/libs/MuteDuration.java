@@ -7,8 +7,8 @@ import java.util.concurrent.TimeUnit;
 
 public class MuteDuration {
 
-    int _duration;
-    TimeUnit _duration_unit;
+    private int _duration;
+    private TimeUnit _duration_unit;
 
     public MuteDuration(int duration, int duration_unit) {
 
