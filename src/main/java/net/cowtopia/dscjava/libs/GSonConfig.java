@@ -9,6 +9,9 @@ import java.io.FileReader;
 
 public class GSonConfig
 {
+
+    private static GSonConfig INSTANCE;
+
     private String bot_token;
     private long server_id;
     private String db_name;
@@ -19,7 +22,9 @@ public class GSonConfig
     private long suggest_ch_id;
     private long tickets_cat;
 
-    public GSonConfig(String bot_token, long server_id, String db_name, long welcome_ch_id, long leave_ch_id, long members_vc_id, long staff_ch_id, long suggest_ch_id, long tickets_cat) {
+    private static final String hierarchyExMsg = "Sorry, I do not have sufficient permissions to do that";
+
+    private GSonConfig(String bot_token, long server_id, String db_name, long welcome_ch_id, long leave_ch_id, long members_vc_id, long staff_ch_id, long suggest_ch_id, long tickets_cat) {
         this.bot_token = bot_token;
         this.server_id = server_id;
         this.db_name = db_name;
@@ -31,7 +36,7 @@ public class GSonConfig
         this.tickets_cat = tickets_cat;
     }
 
-    protected GSonConfig(String neuspeh_inicijalizacije) {
+    private GSonConfig(String neuspeh_inicijalizacije) {
         this.bot_token = "Failure";
         this.server_id = 1L;
         this.db_name = neuspeh_inicijalizacije;
@@ -43,7 +48,7 @@ public class GSonConfig
         this.tickets_cat = 1L;
     }
 
-    public GSonConfig(GSonConfig g) {
+    private GSonConfig(GSonConfig g) {
         this.bot_token = g.bot_token;
         this.server_id = g.server_id;
         this.db_name = g.db_name;
@@ -91,7 +96,18 @@ public class GSonConfig
         return tickets_cat;
     }
 
-    public static GSonConfig getGsonObject(String config)
+    public String getHierarchyExMsg() {
+        return hierarchyExMsg;
+    }
+
+    public static GSonConfig get() {
+        if(INSTANCE == null) {
+            INSTANCE = GSonConfig.getGsonObject("config.json");
+        }
+        return INSTANCE;
+    }
+
+    private static GSonConfig getGsonObject(String config)
     {
         try {
             BufferedReader bufferedReader = new BufferedReader(new FileReader(config));

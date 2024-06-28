@@ -15,7 +15,8 @@ public interface ICommand {
 
     List<OptionData> getOptions();
 
-    DefaultMemberPermissions getPermission();
+    //DefaultMemberPermissions getPermission();
+    Boolean isAdminCommand();
 
     void execute(SlashCommandInteractionEvent event);
 }
