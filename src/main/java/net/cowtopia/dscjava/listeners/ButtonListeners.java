@@ -1,5 +1,7 @@
 package net.cowtopia.dscjava.listeners;
 
+import net.cowtopia.dscjava.libs.CmdType;
+import net.cowtopia.dscjava.libs.HelpManager;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
@@ -68,6 +70,17 @@ public class ButtonListeners extends ListenerAdapter
 
             event.reply("Alert deleted").setEphemeral(true).queue();
 
+        }
+        else if(name.equals("help-button")) {
+
+            event.replyEmbeds(HelpManager.get(CmdType.Help)).setEphemeral(true).queue();
+        }
+        else if(name.equals("help-fun")) {
+
+            event.replyEmbeds(HelpManager.get(CmdType.Fun)).setEphemeral(true).queue();
+        }
+        else if(name.equals("help-mod")) {
+            event.replyEmbeds(HelpManager.get(CmdType.Moderation)).setEphemeral(true).queue();
         }
     }
 }

@@ -18,5 +18,7 @@ public interface ICommand {
     //DefaultMemberPermissions getPermission();
     Boolean isAdminCommand();
 
+    CmdType getCmdType();
+
     void execute(SlashCommandInteractionEvent event);
 }

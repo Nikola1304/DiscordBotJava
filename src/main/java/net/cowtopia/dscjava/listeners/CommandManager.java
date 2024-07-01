@@ -1,6 +1,7 @@
 package net.cowtopia.dscjava.listeners;
 
 import net.cowtopia.dscjava.libs.GSonConfig;
+import net.cowtopia.dscjava.libs.HelpManager;
 import net.cowtopia.dscjava.libs.ICommand;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -54,5 +55,6 @@ public class CommandManager extends ListenerAdapter {
 
     public void add(ICommand command) {
         commands.add(command);
+        HelpManager.fetch_commands(command.getName(), command.getDescription(), command.getCmdType());
     }
 }

@@ -1,6 +1,7 @@
 package net.cowtopia.dscjava.commands.fun;
 
 import com.github.lalyos.jfiglet.FigletFont;
+import net.cowtopia.dscjava.libs.CmdType;
 import net.cowtopia.dscjava.libs.ICommand;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
@@ -32,6 +33,11 @@ public class Figlet implements ICommand {
     @Override
     public Boolean isAdminCommand() {
         return false;
+    }
+
+    @Override
+    public CmdType getCmdType() {
+        return CmdType.Fun;
     }
 
     @Override

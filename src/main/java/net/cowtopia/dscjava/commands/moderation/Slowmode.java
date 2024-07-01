@@ -1,5 +1,6 @@
 package net.cowtopia.dscjava.commands.moderation;
 
+import net.cowtopia.dscjava.libs.CmdType;
 import net.cowtopia.dscjava.libs.ICommand;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
@@ -31,6 +32,11 @@ public class Slowmode implements ICommand {
     @Override
     public Boolean isAdminCommand() {
         return true;
+    }
+
+    @Override
+    public CmdType getCmdType() {
+        return CmdType.Moderation;
     }
 
     @Override

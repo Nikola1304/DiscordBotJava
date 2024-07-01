@@ -1,5 +1,6 @@
 package net.cowtopia.dscjava.commands.help;
 
+import net.cowtopia.dscjava.libs.CmdType;
 import net.cowtopia.dscjava.libs.ICommand;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -31,6 +32,11 @@ public class ServerInfo implements ICommand {
     @Override
     public Boolean isAdminCommand() {
         return false;
+    }
+
+    @Override
+    public CmdType getCmdType() {
+        return CmdType.Help;
     }
 
     @Override

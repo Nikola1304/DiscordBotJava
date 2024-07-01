@@ -1,6 +1,7 @@
 package net.cowtopia.dscjava.commands.moderation;
 
 import net.cowtopia.dscjava.Main;
+import net.cowtopia.dscjava.libs.CmdType;
 import net.cowtopia.dscjava.libs.GSonConfig;
 import net.cowtopia.dscjava.libs.ICommand;
 import net.dv8tion.jda.api.entities.Member;
@@ -34,6 +35,11 @@ public class Unmute implements ICommand {
     @Override
     public Boolean isAdminCommand() {
         return true;
+    }
+
+    @Override
+    public CmdType getCmdType() {
+        return CmdType.Moderation;
     }
 
     @Override

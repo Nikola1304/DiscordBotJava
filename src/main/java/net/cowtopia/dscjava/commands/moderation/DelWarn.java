@@ -1,6 +1,7 @@
 package net.cowtopia.dscjava.commands.moderation;
 
 import net.cowtopia.dscjava.Main;
+import net.cowtopia.dscjava.libs.CmdType;
 import net.cowtopia.dscjava.libs.GSonConfig;
 import net.cowtopia.dscjava.libs.ICommand;
 import net.cowtopia.dscjava.libs.SqliteMan;
@@ -35,6 +36,11 @@ public class DelWarn implements ICommand {
     @Override
     public Boolean isAdminCommand() {
         return true;
+    }
+
+    @Override
+    public CmdType getCmdType() {
+        return CmdType.Moderation;
     }
 
     @Override
