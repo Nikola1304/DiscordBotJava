@@ -1,17 +1,19 @@
 package net.cowtopia.dscjava;
 
-import net.cowtopia.dscjava.commands.fun.*;
-import net.cowtopia.dscjava.commands.help.*;
-import net.cowtopia.dscjava.commands.moderation.*;
 import net.cowtopia.dscjava.libs.*;
 import net.cowtopia.dscjava.listeners.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+
+import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import javax.security.auth.login.LoginException;
-import java.io.*;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+
 import static net.dv8tion.jda.api.utils.MemberCachePolicy.ALL;
 
 public class Main
@@ -44,43 +46,6 @@ public class Main
 
         CommandManager manager = new CommandManager();
 
-        // fun
-        manager.add(new Avatar());
-        manager.add(new Cat());
-        manager.add(new Embed());
-        manager.add(new Figlet());
-        manager.add(new Food());
-        manager.add(new Multiply());
-        manager.add(new Ping());
-        manager.add(new Sum());
-        manager.add(new Sup());
-        manager.add(new UpTime());
-
-        // help
-        manager.add(new Help());
-        manager.add(new Invite());
-        manager.add(new License());
-        manager.add(new Members());
-        manager.add(new Rules());
-        manager.add(new ServerInfo());
-        manager.add(new Suggest());
-        manager.add(new Ticket());
-
-        // moderation
-        manager.add(new Ban());
-        manager.add(new DelWarn());
-        manager.add(new DelWarnings());
-        manager.add(new Kick());
-        manager.add(new Lock());
-        manager.add(new Mute());
-        manager.add(new Purge());
-        manager.add(new Slowmode());
-        manager.add(new SlowmodeAmount());
-        manager.add(new Unlock());
-        manager.add(new Unmute());
-        manager.add(new Warn());
-        manager.add(new Warnings());
-
         JDA bot;
         try {
             bot = JDABuilder.createDefault(json_config.getToken())
@@ -98,15 +63,6 @@ public class Main
             System.out.println("Token may be null");
             return;
         }
-
-
-        // Global and Guild Commands
-        // Global Commands - can be used anywhere: any guild that your bot is in and also in DMs
-        // njih dodajem tako sto umesto guild. dole napisem bot. direktno
-        // ali njima se necu igrati
-        // Guild Commands - can only be used in a specific guild (I need this)
-
-
 
         // ovaj line cini bota 10000x brzim
         System.out.println(ANSI_GREEN + "Hello world!" + ANSI_RESET);
